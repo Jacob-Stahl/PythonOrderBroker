@@ -21,6 +21,74 @@ def test_create_and_destroy_market():
     assert "AAPL" not in broker.markets
 
 
+def test_ear_marked_cash_is_correct_after_limit_orders():
+    broker = Broker()
+    asset = "XYZ"
+    broker.open_account(1)
+    broker.deposit_cash(1, 100000)
+    broker.create_market(asset)
+
+    # ear marked cash should start at 0
+    assert broker.accounts[1].earMarkedCashCents == 0
+
+    limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=50, timestamp=1)
+    limit_order2 = Order(id=2, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=150, amount=30, timestamp=2)
+
+    assert broker.place_order(asset, limit_order1)
+    assert broker.accounts[1].earmarked_cash_cents() == 100 * 50
+    assert broker.accounts[1].tradable_balance_cents() == 100000 - (100 * 50)
+
+    assert broker.place_order(asset, limit_order2)
+
+    expected_earmarked_cash = (100 * 50) + (150 * 30)
+    assert broker.accounts[1].earmarked_cash_cents() == expected_earmarked_cash
+    assert broker.accounts[1].tradable_balance_cents() == 100000 - expected_earmarked_cash
+
+def test_ear_marked_assets_is_correct_after_limit_orders():
+    broker = Broker()
+    asset = "XYZ"
+    broker.open_account(1)
+    broker.accounts[1].portfolio[asset] = 100
+    broker.create_market(asset)
+
+    # ear marked assets should start at 0
+    assert broker.accounts[1].earmarked_asset_amount(asset) == 0
+
+    limit_order1 = Order(id=1, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=40, timestamp=1)
+    limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=30, timestamp=2)
+
+    assert broker.place_order(asset, limit_order1)
+    assert broker.accounts[1].earmarked_asset_amount(asset) == 40
+    assert broker.accounts[1].tradable_asset_amount(asset) == 100 - 40
+
+    assert broker.place_order(asset, limit_order2)
+
+    expected_earmarked_assets = 40 + 30
+    assert broker.accounts[1].earmarked_asset_amount(asset) == expected_earmarked_assets
+    assert broker.accounts[1].tradable_asset_amount(asset) == 100 - expected_earmarked_assets
+
+
+def test_the_total_cash_and_assets_held_in_limits_are_the_same_as_earmarked_amounts():
+    broker = Broker()
+    asset = "XYZ"
+    broker.open_account(1)
+    broker.deposit_cash(1, 100000)
+    broker.accounts[1].portfolio[asset] = 100
+    broker.create_market(asset)
+
+    limit_order_buy = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=200, amount=20, timestamp=1)
+    limit_order_sell = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=30, timestamp=2)
+
+    assert broker.place_order(asset, limit_order_buy)
+    assert broker.place_order(asset, limit_order_sell)
+
+    total_cash_in_bids = broker.total_cash_held_in_bid_limits(asset)
+    total_assets_in_asks = broker.total_assets_held_in_ask_limits(asset)
+
+    assert total_cash_in_bids == broker.accounts[1].earmarked_cash_cents()
+    assert total_assets_in_asks == broker.accounts[1].earmarked_asset_amount(asset)
+
+
 def test_market_bids_with_no_asks():
     """
     3 orders with equal sizes are placed
@@ -248,22 +316,26 @@ def test_large_market_orders_are_correctly_matched():
     assert broker.place_order(asset, market_order)
     # buyer should receive matched assets
     assert broker.accounts[6].portfolio.get(asset, 0) == total_amount
+    
     # only the fifth ask limit should remain in the orderbook
     asks_df = broker.markets[asset]._asks
     assert asks_df.height == 1
     assert asks_df[0, "id"] == 5
     assert asks_df[0, "amount"] == amount
 
-    # Check that ear marked assets have been reduced. they should only be with the last seller
+    # check that the first four sellers received their cash
     for tid in range(1, 5):
-        assert broker.accounts[tid].earMarkedAssets.get(asset, 0) == 0
-        assert broker.accounts[tid].earMarkedCashCents == 0
-    assert broker.accounts[5].earMarkedAssets.get(asset, 0) == amount
-    assert broker.accounts[5].earMarkedCashCents == 0
+        assert broker.accounts[tid].cashBalanceCents == amount * price
+        assert broker.accounts[tid].portfolio.get(asset, 0) == 0
 
-    # Check the total assets held in ask limits
-    assert broker.total_assets_held_in_ask_limits(asset) == amount
-    assert broker.total_cash_held_in_bid_limits(asset) == 0
+    # check that the last seller still has their asset and no cash
+    assert broker.accounts[5].cashBalanceCents == 0
+    assert broker.accounts[5].portfolio.get(asset, 0) == amount
+
+    # Check that the buyer received all assets, and has reduced cash balance
+    expected_cash_balance = (total_amount * price) - (total_amount * price)
+    assert broker.accounts[6].cashBalanceCents == expected_cash_balance
+    assert broker.accounts[6].portfolio.get(asset, 0) == total_amount
 
 def test_limit_orders_fail_if_trader_has_insufficient_earmarked_assets_or_cash():
     broker = Broker()
@@ -327,6 +399,7 @@ def test_market_orders_fail_if_trader_has_insufficient_assets_or_cash():
 
     # total cash and assets held by account 1 should be unchanged
     assert broker.accounts[1].cashBalanceCents == 500
+    assert broker.accounts[1].portfolio.get(asset, 0) == 0
 
     # account 2 places a market sell that exceeds available assets
     large_market_sell = Order(id=4, traderId=2, side=Side.SELL, type=OrderType.MARKET, priceCents=100, amount=10, timestamp=4)
@@ -338,3 +411,4 @@ def test_market_orders_fail_if_trader_has_insufficient_assets_or_cash():
 
     # total cash and assets held by account 2 should be unchanged
     assert broker.accounts[2].portfolio.get(asset, 0) == 5
+    assert broker.accounts[2].cashBalanceCents == 0

@@ -40,6 +40,84 @@ class TestMatcher:
         assert matcher.total_assets_held_in_ask_limits() == sample_sell_order.amount
         assert matcher.total_cash_held_in_bid_limits() == 0
 
+    def test_place_market_sell_beyond_available_assets(self):
+        """Test placing a market sell order that exceeds available assets."""
+        
+        matcher = Matcher()
+        sample_market_sell_order = Order(
+            id=2,
+            traderId=1,
+            side=Side.SELL,
+            type=OrderType.MARKET,
+            priceCents=0,  # priceCents is ignored for market orders
+            amount=10,
+            timestamp=2
+        )
+
+        # Place a limit buy order to have some bids in the order book
+        buy_order = Order(
+            id=1,
+            traderId=1,
+            side=Side.BUY,
+            type=OrderType.LIMIT,
+            priceCents=10000,
+            amount=10,
+            timestamp=1
+        )
+        matcher.place_limit_order(buy_order)
+        
+        # Attempt to place a market sell order exceeding available assets
+        result = matcher.match_market_order(sample_market_sell_order, availableAssets=5)
+        
+        assert result is False  # Should fail due to insufficient assets
+
+        # order book should remain unchanged
+        assert len(matcher._bids) == 1
+        assert len(matcher._asks) == 0
+
+        # buy limit order should remain unchanged
+        first_bid = matcher._bids.row(0, named=True)
+        assert first_bid['id'] == buy_order.id
+        assert first_bid['amount'] == buy_order.amount
+
+    def test_place_market_buy_beyond_available_cash(self):
+        """Test placing a market buy order that exceeds available cash."""
+        matcher = Matcher()
+        sample_market_buy_order = Order(
+            id=2,
+            traderId=1,
+            side=Side.BUY,
+            type=OrderType.MARKET,
+            priceCents=0,  # priceCents is ignored for market orders
+            amount=10,
+            timestamp=2
+        )
+        # Place a limit sell order to have some asks in the order book
+        sell_order = Order(
+            id=1,
+            traderId=1,
+            side=Side.SELL,
+            type=OrderType.LIMIT,
+            priceCents=10000,
+            amount=10,
+            timestamp=1
+        )
+        matcher.place_limit_order(sell_order)
+        
+        # Attempt to place a market buy order exceeding available cash
+        result = matcher.match_market_order(sample_market_buy_order, availableCash=50000)
+        
+        assert result is False  # Should fail due to insufficient cash
+
+        # order book should remain unchanged
+        assert len(matcher._bids) == 0
+        assert len(matcher._asks) == 1
+
+        # sell limit order should remain unchanged
+        first_ask = matcher._asks.row(0, named=True)
+        assert first_ask['id'] == sell_order.id
+        assert first_ask['amount'] == sell_order.amount
+
     def test_get_ask_depth(self, sample_sell_order):
         """Test get_ask_depth returns correct price levels and cumulative amounts sorted by price asc when timestamps equal."""
         matcher = Matcher()

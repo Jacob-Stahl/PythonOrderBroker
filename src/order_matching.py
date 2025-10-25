@@ -6,6 +6,7 @@ from enum import Enum
 import polars as pl
 from src.models import Order, OrderType, Match, Side
 from copy import deepcopy
+import sys
 
 def pl_row_to_order(row: pl.DataFrame) -> Order:
     assert len(row) == 1
@@ -110,8 +111,18 @@ class Matcher():
             self._asks = pl.concat([self._asks, new_row])
             self._sort_asks()
 
-    def match_market_order(self, marketOrder: Order) -> bool:
-        """ Returns True if fully matched, False failed to find a complete match"""
+    def match_market_order(self, marketOrder: Order, 
+                           availableCash: int = sys.maxsize,
+                           availableAssets: int = sys.maxsize
+                           ) -> bool:
+        """ 
+        Returns True if fully matched, False failed to find a complete match
+        
+        Args:
+            marketOrder (Order): The market order to match
+            availableCash (int): The amount of cash available to spend (for buy orders)
+            availableAssets (int): The amount of assets available to sell (for sell orders)
+        """
         assert marketOrder.type == OrderType.MARKET
         
         amountRemaining: int = marketOrder.amount
@@ -121,6 +132,15 @@ class Matcher():
         # snapshot the order books so we can rollback if needed
         orig_bids = self._bids.clone()
         orig_asks = self._asks.clone()
+        def rollback():
+            self._bids = orig_bids
+            self._asks = orig_asks
+
+        # track if we have exceeded available funds, if so we need to rollbacks
+        exceededAvailableFunds: bool = False
+        exceededAvailableAssets: bool = False
+        totalCostCents = 0
+        totalCostAssets = 0
 
         if marketOrder.side == Side.BUY:
             for idx in range(len(self._asks)):
@@ -130,9 +150,19 @@ class Matcher():
                     break
                 if thisLimitOrder.priceCents > marketOrder.priceCents:
                     break # asks are sorted in accending order. all orders after this won't match
+
+                # determine how much of the limit order we can match. this accounts for split orders
                 match_amount = min(amountRemaining, thisLimitOrder.amount)
                 match.limitOrders.append(thisLimitOrder)
-                amountRemaining -= match_amount           
+                amountRemaining -= match_amount
+                totalCostCents += match_amount * thisLimitOrder.priceCents
+                if totalCostCents > availableCash:
+                    # we have exceeded available cash, rollback this match
+                    amountRemaining += match_amount
+                    totalCostCents -= match_amount * thisLimitOrder.priceCents
+                    exceededAvailableFunds = True
+                    break
+
                 # if match amount is less than the limit order, subtract the match amount from the order    
                 if(match_amount < thisLimitOrder.amount):
                     self._asks[idx, "amount"] = thisLimitOrder.amount - match_amount
@@ -141,7 +171,7 @@ class Matcher():
             # clear out matched limit orders
             orderIdsToRemove.sort(reverse=True)
             self._asks = self._asks.filter(~pl.col("id").is_in(orderIdsToRemove))
-        else:
+        else: # Sell
             for idx in range(len(self._bids)):
                 row = self._bids[idx]
                 thisLimitOrder = pl_row_to_order(row)
@@ -150,14 +180,20 @@ class Matcher():
                 if thisLimitOrder.priceCents < marketOrder.priceCents:
                     break # bids are sorted in descending order. all orders after this won't match
                 match_amount = min(amountRemaining, thisLimitOrder.amount)
-                amountRemaining -= match_amount           
+                amountRemaining -= match_amount
+                totalCostAssets += match_amount
+                if totalCostAssets > availableAssets:
+                    # we have exceeded available assets, rollback this match
+                    amountRemaining += match_amount
+                    totalCostAssets -= match_amount
+                    exceededAvailableAssets = True
+                    break
                 # if match amount is less than the limit order, subtract the match amount from the order    
                 if(match_amount < thisLimitOrder.amount):
                     self._bids[idx, "amount"] = thisLimitOrder.amount - match_amount            
                     partialOrder = deepcopy(thisLimitOrder)
                     partialOrder.amount = match_amount
                     match.limitOrders.append(partialOrder)
-
 
                 else: # they are equal, remove the limit order  
                     orderIdsToRemove.append(thisLimitOrder.id)    
@@ -167,14 +203,17 @@ class Matcher():
             orderIdsToRemove.sort(reverse=True)
             self._bids = self._bids.filter(~pl.col("id").is_in(orderIdsToRemove))
 
+        # check if we exceeded available funds or assets
+        if exceededAvailableFunds or exceededAvailableAssets:
+            rollback()
+            return False
+
         # validate that match fulfils the order
         if match.fulfils_market_order():
             self._matches.append(match)
             return True
         else:
-            # rollback
-            self._bids = orig_bids
-            self._asks = orig_asks
+            rollback()
             return False
         
     def total_assets_held_in_ask_limits(self) -> int:
