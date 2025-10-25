@@ -61,7 +61,7 @@ class Broker:
         )
 
     def open_account(self, traderId: int):
-        assert not traderId in self.accounts.keys() # the other assets should look like this
+        assert not traderId in self.accounts.keys()
         newAccount = Account(traderId)
         self.accounts[traderId] = newAccount
     
@@ -140,8 +140,8 @@ class Broker:
 
         assert asset in self.markets.keys()
         assert order.traderId in self.accounts.keys()
-        assert order.amount > 0 
-        assert order.priceCents > 0
+        assert order.amount >= 0 
+        assert order.priceCents >= 0
 
         originalCashBalanceCents: int = 0
         originalAssetBalance: int = 0
@@ -181,8 +181,7 @@ class Broker:
                         f"Trader {order.traderId} does not have enough of asset '{asset}' to place this sell"
                     
                     self.accounts[order.traderId].earMarkedAssets[asset] += order.amount
-                    
-            
+                             
             # place the order in the market
             if(order.type == OrderType.LIMIT):
                 self.markets[asset].place_limit_order(order)

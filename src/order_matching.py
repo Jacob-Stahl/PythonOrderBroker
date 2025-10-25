@@ -27,12 +27,12 @@ class Matcher():
         # Initialize empty DataFrames with the correct schema
         schema = {
             "id": pl.Int64,
+            "timestamp": pl.Int64,
             "traderId": pl.Int64,
             "side": pl.Int64,
             "type": pl.Int64,
-            "priceCents": pl.Int64,
             "amount": pl.Int64,
-            "timestamp": pl.Int64
+            "priceCents": pl.Int64,
         }
         self._bids: pl.DataFrame = pl.DataFrame(schema=schema).with_row_index()
         self._asks: pl.DataFrame = pl.DataFrame(schema=schema).with_row_index()
@@ -148,8 +148,6 @@ class Matcher():
                 thisLimitOrder = pl_row_to_order(row)
                 if amountRemaining <= 0:
                     break
-                if thisLimitOrder.priceCents > marketOrder.priceCents:
-                    break # asks are sorted in accending order. all orders after this won't match
 
                 # determine how much of the limit order we can match. this accounts for split orders
                 match_amount = min(amountRemaining, thisLimitOrder.amount)
@@ -177,8 +175,6 @@ class Matcher():
                 thisLimitOrder = pl_row_to_order(row)
                 if amountRemaining <= 0:
                     break
-                if thisLimitOrder.priceCents < marketOrder.priceCents:
-                    break # bids are sorted in descending order. all orders after this won't match
                 match_amount = min(amountRemaining, thisLimitOrder.amount)
                 amountRemaining -= match_amount
                 totalCostAssets += match_amount

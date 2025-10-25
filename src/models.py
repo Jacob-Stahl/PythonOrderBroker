@@ -15,12 +15,17 @@ class OrderType(Enum):
 @dataclass
 class Order:
     id: int
+    timestamp: int
     traderId: int
     side: Side
     type: OrderType
-    priceCents: int
     amount: int
-    timestamp: int
+    priceCents: int = 0
+
+    def __post_init__(self):
+        # Ensure priceCents is 0 for market orders
+        assert not (self.type == OrderType.MARKET and self.priceCents != 0), \
+                "Market orders must have priceCents set to 0"
 
 class OrderStatus(Enum):
     SETTLED = 0

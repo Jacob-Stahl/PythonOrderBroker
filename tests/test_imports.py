@@ -49,7 +49,14 @@ class TestBasicImports:
     
     def test_match_class_can_be_imported_and_created(self):
         """Verify that the Match class can be imported and instantiated."""
-        order = Order(1, 100, Side.BUY, OrderType.MARKET, 10000, 50, 1000000)
+        order = Order(
+            id=1,
+            traderId=100,
+            side=Side.BUY,
+            type=OrderType.MARKET,
+            amount=50,
+            timestamp=1000000
+        )
         match = Match(marketOrder=order)
         assert match is not None
         assert match.marketOrder == order
@@ -104,7 +111,6 @@ class TestBasicFunctionality:
             traderId=200,
             side=Side.SELL,  # Using imported enum
             type=OrderType.MARKET,  # Using imported enum
-            priceCents=10050,
             amount=30,
             timestamp=1000001
         )

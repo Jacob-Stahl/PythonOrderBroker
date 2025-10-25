@@ -12,7 +12,7 @@ sys.path.insert(0, str(src_path))
 
 # Import modules for testing - do this after path modification
 try:
-    from order_matching import Matcher, Order, Side, OrderType, Match
+    from src.order_matching import Matcher, Order, Side, OrderType, Match
 except ImportError as e:
     print(f"Import error: {e}")
     print(f"Python path: {sys.path}")
@@ -58,7 +58,6 @@ def sample_market_buy_order():
         traderId=300,
         side=Side.BUY,
         type=OrderType.MARKET,
-        priceCents=10100,  # $101.00
         amount=25,
         timestamp=1000002
     )

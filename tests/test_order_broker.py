@@ -4,6 +4,15 @@ from src.models import Order, Side, OrderType
 
 from src.broker_vis import depth_chart
 
+
+def test_open_account():
+    broker = Broker()
+    broker.open_account(1)
+    assert 1 in broker.accounts
+    assert broker.accounts[1].traderId == 1
+    assert broker.accounts[1].cashBalanceCents == 0
+    assert broker.accounts[1].portfolio == {}
+
 def test_account_deposit_withdraw():
     broker = Broker()
     broker.open_account(1)
@@ -123,7 +132,7 @@ def test_market_bids_with_no_asks():
     broker.deposit_cash(3, total)
 
     # first market buy
-    bid_market1 = Order(id=2, traderId=2, side=Side.BUY, type=OrderType.MARKET, priceCents=price, amount=amount, timestamp=2)
+    bid_market1 = Order(id=2, traderId=2, side=Side.BUY, type=OrderType.MARKET, amount=amount, timestamp=2)
     assert broker.place_order(asset, bid_market1)
     
     # check balances after first match
@@ -134,7 +143,7 @@ def test_market_bids_with_no_asks():
     assert broker.accounts[1].earMarkedAssets.get(asset, 0) == 0
    
     # second market buy should fail
-    bid_market2 = Order(id=3, traderId=3, side=Side.BUY, type=OrderType.MARKET, priceCents=price, amount=amount, timestamp=3)
+    bid_market2 = Order(id=3, traderId=3, side=Side.BUY, type=OrderType.MARKET, amount=amount, timestamp=3)
     assert not broker.place_order(asset, bid_market2)
     
     # ensure no assets or loss of cash
@@ -185,7 +194,7 @@ def test_market_ask_with_no_bids():
         broker.accounts[tid].portfolio[asset] = amount
    
     # first market sell
-    sell_market1 = Order(id=2, traderId=2, side=Side.SELL, type=OrderType.MARKET, priceCents=price, amount=amount, timestamp=2)
+    sell_market1 = Order(id=2, traderId=2, side=Side.SELL, type=OrderType.MARKET, amount=amount, timestamp=2)
     assert broker.place_order(asset, sell_market1)
    
     # check balances after first match
@@ -193,7 +202,7 @@ def test_market_ask_with_no_bids():
     assert broker.accounts[2].cashBalanceCents == total
     
     # second market sell should fail
-    sell_market2 = Order(id=3, traderId=3, side=Side.SELL, type=OrderType.MARKET, priceCents=price, amount=amount, timestamp=3)
+    sell_market2 = Order(id=3, traderId=3, side=Side.SELL, type=OrderType.MARKET, amount=amount, timestamp=3)
     assert not broker.place_order(asset, sell_market2)
     
     # ensure no cash or loss of asset
@@ -248,7 +257,7 @@ def test_large_limits_are_split_correctly():
     # process small ask market orders
     for i, sid in enumerate(seller_ids, start=2):
         order_id = i
-        sell_market = Order(id=order_id, traderId=sid, side=Side.SELL, type=OrderType.MARKET, priceCents=price, amount=2, timestamp=i)
+        sell_market = Order(id=order_id, traderId=sid, side=Side.SELL, type=OrderType.MARKET, amount=2, timestamp=i)
         assert broker.place_order(asset, sell_market)
         expected_remaining = large_amount - 2 * (i - 1)
         bids_df = broker.markets[asset]._bids
@@ -309,7 +318,6 @@ def test_large_market_orders_are_correctly_matched():
         traderId=6,
         side=Side.BUY,
         type=OrderType.MARKET,
-        priceCents=price,
         amount=total_amount,
         timestamp=6
     )
@@ -390,7 +398,7 @@ def test_market_orders_fail_if_trader_has_insufficient_assets_or_cash():
     assert broker.place_order(asset, large_ask_limit)
 
     # account 1 places a market buy that exceeds available cash
-    large_market_buy = Order(id=3, traderId=1, side=Side.BUY, type=OrderType.MARKET, priceCents=100, amount=10, timestamp=3)
+    large_market_buy = Order(id=3, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=10, timestamp=3)
     assert not broker.place_order(asset, large_market_buy)
 
     # total cash and assets held in limits should be unchanged
@@ -402,7 +410,7 @@ def test_market_orders_fail_if_trader_has_insufficient_assets_or_cash():
     assert broker.accounts[1].portfolio.get(asset, 0) == 0
 
     # account 2 places a market sell that exceeds available assets
-    large_market_sell = Order(id=4, traderId=2, side=Side.SELL, type=OrderType.MARKET, priceCents=100, amount=10, timestamp=4)
+    large_market_sell = Order(id=4, traderId=2, side=Side.SELL, type=OrderType.MARKET, amount=10, timestamp=4)
     assert not broker.place_order(asset, large_market_sell)
 
     # total cash and assets held in limits should be unchanged

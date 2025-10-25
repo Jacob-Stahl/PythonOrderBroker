@@ -21,6 +21,10 @@ class TestMatcher:
         assert first_bid['id'] == sample_buy_order.id
         assert first_bid['side'] == Side.BUY.value
         assert first_bid['priceCents'] == sample_buy_order.priceCents
+
+        # check the total cash held in bid limits
+        assert matcher.total_cash_held_in_bid_limits() == sample_buy_order.amount * sample_buy_order.priceCents
+        assert matcher.total_assets_held_in_ask_limits() == 0
     
     def test_place_sell_limit_order(self, sample_sell_order):
         """Test placing a sell limit order."""
@@ -39,6 +43,38 @@ class TestMatcher:
         # check the total assets held in ask limits
         assert matcher.total_assets_held_in_ask_limits() == sample_sell_order.amount
         assert matcher.total_cash_held_in_bid_limits() == 0
+
+    def test_market_orders_should_fail_if_no_limits(self, sample_market_buy_order):
+        """Test that market orders fail when there are no matching limit orders."""
+        matcher = Matcher()
+        
+        # Test market buy order with no asks
+        result_buy = matcher.match_market_order(sample_market_buy_order)
+        assert result_buy is False  # Should fail due to no asks
+        
+        # Test market sell order with no bids
+        sample_market_sell_order = Order(
+            id=2,
+            traderId=1,
+            side=Side.SELL,
+            type=OrderType.MARKET,
+            amount=10,
+            timestamp=2
+        )
+        result_sell = matcher.match_market_order(sample_market_sell_order)
+        assert result_sell is False  # Should fail due to no bids
+
+        # Test market sell order with no bids
+        sample_market_sell_order = Order(
+            id=2,
+            traderId=1,
+            side=Side.SELL,
+            type=OrderType.MARKET,
+            amount=10,
+            timestamp=2
+        )
+        result_sell = matcher.match_market_order(sample_market_sell_order)
+        assert result_sell is False  # Should fail due to no bids
 
     def test_place_market_sell_beyond_available_assets(self):
         """Test placing a market sell order that exceeds available assets."""
@@ -141,6 +177,63 @@ class TestMatcher:
         assert matcher.total_assets_held_in_ask_limits() == sample_sell_order.amount + order2.amount
         assert matcher.total_cash_held_in_bid_limits() == 0
 
+    def test_limits_are_removed_from_order_book_after_matching(self):
+        """Test that limit orders are removed from the order book after matching a market order."""
+        
+        # place limit orders
+        matcher = Matcher()
+        buy_limit = Order(
+            id=1,
+            traderId=1,
+            side=Side.BUY,
+            type=OrderType.LIMIT,
+            priceCents=10000,
+            amount=20,
+            timestamp=1
+        )
+        matcher.place_limit_order(buy_limit)
+        sell_limit = Order(
+            id=2,
+            traderId=2,
+            side=Side.SELL,
+            type=OrderType.LIMIT,
+            priceCents=10000,
+            amount=20,
+            timestamp=2
+        )
+        matcher.place_limit_order(sell_limit)
+        assert len(matcher._bids) == 1
+        assert len(matcher._asks) == 1
+
+        # place market buy order
+        market_order = Order(
+            id=3,
+            traderId=1,
+            side=Side.BUY,
+            type=OrderType.MARKET,
+            amount=20,
+            timestamp=3
+        )
+        matcher.match_market_order(market_order)
+
+        # check that the market order above matched and removed the ask
+        assert len(matcher._bids) == 1
+        assert len(matcher._asks) == 0
+
+        # match market sell order
+        market_order_sell = Order(
+            id=4,
+            traderId=2,
+            side=Side.SELL,
+            type=OrderType.MARKET,
+            amount=20,
+            timestamp=4
+        )
+        matcher.match_market_order(market_order_sell)
+
+        # check that limit orders are removed
+        assert len(matcher._bids) == 0
+        assert len(matcher._asks) == 0
 
 class TestOrderConversion:
     """Test the pl_row_to_order function."""
