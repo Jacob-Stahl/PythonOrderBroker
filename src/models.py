@@ -39,3 +39,9 @@ class Match:
 
     def fulfils_market_order(self):
         return self.marketOrder.amount == sum([o.amount for o in self.limitOrders])
+    
+    def limit_orders_total_amount(self) -> int:
+        return sum([o.amount for o in self.limitOrders])
+    
+    def limit_orders_total_value_cents(self) -> int:
+        return sum([o.amount * o.priceCents for o in self.limitOrders])

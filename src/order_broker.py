@@ -14,6 +14,33 @@ class Account:
     # asset - amount
     portfolio: dict[str, int] = field(default_factory= dict)
 
+    earMarkedCashCents: int = 0
+    earMarkedAssets: dict[str, int] = field(default_factory= dict)
+
+    def tradable_balance_cents(self) -> int:
+        return self.cashBalanceCents - self.earMarkedCashCents
+    
+    def tradable_asset_amount(self, asset: str) -> int:
+        heldAmount = 0
+        if asset in self.earMarkedAssets.keys():
+            heldAmount = self.earMarkedAssets[asset]
+        
+        totalAmount = 0
+        if asset in self.portfolio.keys():
+            totalAmount = self.portfolio[asset]
+        
+        return totalAmount - heldAmount
+    
+    def earmarked_asset_amount(self, asset: str) -> int:
+        if asset in self.earMarkedAssets.keys():
+            return self.earMarkedAssets[asset]
+        return 0
+
+    def earmarked_cash_cents(self) -> int:
+        return self.earMarkedCashCents
+
+
+
 class Broker:
 
     # TODO track L1 orderbook history
@@ -61,6 +88,8 @@ class Broker:
         for account in self.accounts.values():
             if account.portfolio.keys().__contains__(asset):
                 account.portfolio.pop(asset)
+            if account.earMarkedAssets.keys().__contains__(asset):
+                account.earMarkedAssets.pop(asset)
 
         # TODO return cash held in buy orders to all traders
 
@@ -73,7 +102,7 @@ class Broker:
     def withdraw_cash(self, traderId: int, amountCents: int):
         assert amountCents >= 0
         assert traderId in self.accounts.keys()
-        assert self.accounts[traderId].cashBalanceCents >= amountCents
+        assert self.accounts[traderId].tradable_balance_cents() >= amountCents
 
         self.accounts[traderId].cashBalanceCents -= amountCents
 
@@ -92,7 +121,7 @@ class Broker:
 
         acct = self.accounts[traderId]
         assert asset in acct.portfolio.keys()
-        assert acct.portfolio[asset] >= amount
+        assert acct.tradable_asset_amount(asset) >= amount
 
         acct.portfolio[asset] -= amount
         if acct.portfolio[asset] == 0:
@@ -116,43 +145,49 @@ class Broker:
 
         originalCashBalanceCents: int = 0
         originalAssetBalance: int = 0
+        originalEarMarkedCashCents: int = self.accounts[order.traderId].earmarked_cash_cents()
+        originalEarMarkedAssetAmount: int = self.accounts[order.traderId].earmarked_asset_amount(asset)
 
-        cashHeldForOrder: int = 0
-        assetsHeldForOrder: int = 0
+        isSuccessful: bool = False
 
-        if order.side == Side.BUY:
-            # validate the trader has enough cash to settle the order
-            assert self.accounts[order.traderId].cashBalanceCents >= order.amount * order.priceCents
-            originalCashBalanceCents = self.accounts[order.traderId].cashBalanceCents
-            
-            # hold the required cash
-            cashHeldForOrder = order.amount * order.priceCents
-            self.accounts[order.traderId].cashBalanceCents -= cashHeldForOrder
-
-        elif order.side == Side.SELL:  # Sell
-            assert asset in self.accounts[order.traderId].portfolio.keys()
-            assert self.accounts[order.traderId].portfolio[asset] >= order.amount
-            originalAssetBalance = self.accounts[order.traderId].portfolio[asset]
-
-            # hold the required assets
-            assetsHeldForOrder = order.amount
-            self.accounts[order.traderId].portfolio[asset] -= assetsHeldForOrder
-        else:
-            raise Exception(f"Couldn't resolve side")
-
-
-        # add to order book
-        success: bool = False
         try:
+            # validate the trader has enough cash to settle the order
+            # record original balances to revert in case of failure
+            if order.side == Side.BUY:
+                originalCashBalanceCents = self.accounts[order.traderId].cashBalanceCents
+
+            elif order.side == Side.SELL:  # Sell
+                assert asset in self.accounts[order.traderId].portfolio.keys()
+                originalAssetBalance = self.accounts[order.traderId].portfolio[asset]
+            else:
+                raise Exception(f"Couldn't resolve side")
+            
+            # for limit orders, ear mark the cash / assets
+            if order.type == OrderType.LIMIT:
+                if order.side == Side.BUY:
+                    assert originalEarMarkedCashCents + (order.amount * order.priceCents) <= originalCashBalanceCents, \
+                        f"Trader {order.traderId} does not have enough cash to place this buy"
+                    
+                    self.accounts[order.traderId].earMarkedCashCents += order.amount * order.priceCents
+                elif order.side == Side.SELL:
+                    if asset not in self.accounts[order.traderId].earMarkedAssets.keys():
+                        self.accounts[order.traderId].earMarkedAssets[asset] = 0
+                    assert originalEarMarkedAssetAmount + order.amount <= originalAssetBalance, \
+                        f"Trader {order.traderId} does not have enough of asset '{asset}' to place this sell"
+                    
+                    self.accounts[order.traderId].earMarkedAssets[asset] += order.amount
+                    
+            
+            # place the order in the market
             if(order.type == OrderType.LIMIT):
                 self.markets[asset].place_limit_order(order)
-                success = True   
+                isSuccessful = True   
             elif(order.type == OrderType.MARKET):
                 if self.markets[asset].match_market_order(order):
                     match = self.markets[asset].dequeue_match()
                     if match is not None:
-                        self._settle_trade(match, asset, cashHeldForOrder, assetsHeldForOrder)
-                        success = True
+                        self._settle_trade(match, asset)
+                        isSuccessful = True
                     else:
                         raise Exception("Failed to dequeue match")
                 else:
@@ -163,13 +198,17 @@ class Broker:
             # revert account to the previous state if there is an exception
             if order.side == Side.SELL:
                 self.accounts[order.traderId].portfolio[asset] = originalAssetBalance
+                if order.type == OrderType.LIMIT:
+                    self.accounts[order.traderId].earMarkedAssets[asset] = originalEarMarkedAssetAmount
             else: # BUY
                 self.accounts[order.traderId].cashBalanceCents = originalCashBalanceCents
-            success = False
+                if order.type == OrderType.LIMIT:
+                    self.accounts[order.traderId].earMarkedCashCents = originalEarMarkedCashCents
+            isSuccessful = False
 
         # update l1 hist
         self._update_l1_hist(asset, order.timestamp)
-        return success
+        return isSuccessful
         
     def get_lowest_ask(self, asset:str) -> Union[None, int]:
         """try to get the lowest ask for a given asset"""
@@ -213,33 +252,55 @@ class Broker:
 
         self.l1_hist = pl.concat([self.l1_hist, new_row])
 
-    def _settle_trade(self, match: Match, asset: str, cashHeldForOrder: int, assetsHeldForOrder: int) -> None:      
+    def _settle_trade(self, match: Match, asset: str) -> None:      
         market = match.marketOrder
         account = self.accounts[market.traderId]
 
         # settle the market‐order side
         if market.side == Side.BUY:
-            if not asset in account.portfolio:
-                account.portfolio[asset] = 0
-            account.portfolio[asset] += market.amount
-            updatedBalance = cashHeldForOrder - (market.amount * market.priceCents)
-            if updatedBalance < 0:
-                raise Exception("Insufficient held cash to settle buy order")
-            account.cashBalanceCents += updatedBalance
-        else:
-            account.cashBalanceCents += market.amount * market.priceCents
+            # check that the buyer has enough un-earmarked cash
+            assert account.tradable_balance_cents() >= match.limit_orders_total_value_cents()
 
-        # settle each limit‐order on the other side
+            # debit cash from buyer
+            account.cashBalanceCents -= match.limit_orders_total_value_cents()
+            
+            # credit asset to buyer
+            if asset not in account.portfolio.keys():
+                account.portfolio[asset] = 0
+            account.portfolio[asset] += match.limit_orders_total_amount()
+
+        elif market.side == Side.SELL:
+            # check that the seller has enough un-earmarked assets
+            assert account.tradable_asset_amount(asset) >= match.limit_orders_total_amount()
+
+            # debit asset from seller
+            account.portfolio[asset] -= match.limit_orders_total_amount()
+
+            # credit cash to seller
+            account.cashBalanceCents += match.limit_orders_total_value_cents()
+
+
+        # settle each limit‐order on the other side - any Exceptions here will create or destroy assets / cash!
         for limit in match.limitOrders:
-            other = self.accounts[limit.traderId]
-            if market.side == Side.BUY:
-                # sellers get cash
-                other.cashBalanceCents += limit.priceCents * limit.amount
-            else:
-                # buyers get asset
-                if not asset in other.portfolio:
-                    other.portfolio[asset] = 0
-                other.portfolio[asset] += limit.amount
+            limit_account = self.accounts[limit.traderId]
+
+            if limit.side == Side.BUY:
+                # debit cash from buyer
+                limit_account.earMarkedCashCents -= limit.amount * limit.priceCents
+                limit_account.cashBalanceCents -= limit.amount * limit.priceCents
+
+                # credit asset to buyer
+                if asset not in limit_account.portfolio.keys():
+                    limit_account.portfolio[asset] = 0
+                limit_account.portfolio[asset] += limit.amount
+
+            elif limit.side == Side.SELL:
+                # debit asset from seller
+                limit_account.earMarkedAssets[asset] -= limit.amount
+                limit_account.portfolio[asset] -= limit.amount
+
+                # credit cash to seller
+                limit_account.cashBalanceCents += limit.amount * limit.priceCents
 
 
     def total_assets_held_in_ask_limits(self, asset: str) -> int:

@@ -4,7 +4,6 @@ from src.models import Order, Side, OrderType
 
 from src.broker_vis import depth_chart
 
-
 def test_account_deposit_withdraw():
     broker = Broker()
     broker.open_account(1)
@@ -46,6 +45,9 @@ def test_market_bids_with_no_asks():
     # place ask limit
     ask_limit = Order(id=1, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=price, amount=amount, timestamp=1)
     assert broker.place_order(asset, ask_limit)
+
+    # check that the correct amount of assets are ear marked
+    assert broker.accounts[1].earMarkedAssets[asset] == amount
     
     # buyers deposit cash
     total = price * amount
@@ -59,6 +61,9 @@ def test_market_bids_with_no_asks():
     # check balances after first match
     assert broker.accounts[2].portfolio.get(asset, 0) == amount
     assert broker.accounts[1].cashBalanceCents == total
+
+    # check that ear marked assets have been reduced to zero
+    assert broker.accounts[1].earMarkedAssets.get(asset, 0) == 0
    
     # second market buy should fail
     bid_market2 = Order(id=3, traderId=3, side=Side.BUY, type=OrderType.MARKET, priceCents=price, amount=amount, timestamp=3)
@@ -76,6 +81,12 @@ def test_market_bids_with_no_asks():
     # Check the total assets held in ask limits
     assert broker.total_assets_held_in_ask_limits(asset) == 0
     assert broker.total_cash_held_in_bid_limits(asset) == 0
+
+    # Check that ear marked assets have been reduced to zero
+    assert broker.accounts[1].earMarkedAssets.get(asset, 0) == 0
+    assert broker.accounts[1].earMarkedCashCents == 0
+    assert broker.accounts[2].earMarkedAssets.get(asset, 0) == 0
+    assert broker.accounts[2].earMarkedCashCents == 0
 
 
 def test_market_ask_with_no_bids():
@@ -130,6 +141,13 @@ def test_market_ask_with_no_bids():
     assert broker.total_assets_held_in_ask_limits(asset) == 0
     assert broker.total_cash_held_in_bid_limits(asset) == 0
 
+    # Check that ear marked assets have been reduced to zero
+    assert broker.accounts[1].earMarkedAssets.get(asset, 0) == 0
+    assert broker.accounts[1].earMarkedCashCents == 0
+    assert broker.accounts[2].earMarkedAssets.get(asset, 0) == 0
+    assert broker.accounts[2].earMarkedCashCents == 0
+
+
 
 def test_large_limits_are_split_correctly():
     """
@@ -171,6 +189,19 @@ def test_large_limits_are_split_correctly():
         else:
             # no remaining bid orders
             assert bids_df.height == 0
+
+    # check that buyer received all assets
+    assert broker.accounts[1].portfolio.get(asset, 0) == large_amount
+
+    # Check that ear marked assets have been reduced to zero
+    assert broker.accounts[1].earMarkedAssets.get(asset, 0) == 0
+    assert broker.accounts[1].earMarkedCashCents == 0
+    assert broker.accounts[2].earMarkedAssets.get(asset, 0) == 0
+    assert broker.accounts[2].earMarkedCashCents == 0
+
+    # Check the total assets held in ask limits
+    assert broker.total_assets_held_in_ask_limits(asset) == 0
+    assert broker.total_cash_held_in_bid_limits(asset) == 0
 
 def test_large_market_orders_are_correctly_matched():
     """
@@ -222,3 +253,88 @@ def test_large_market_orders_are_correctly_matched():
     assert asks_df.height == 1
     assert asks_df[0, "id"] == 5
     assert asks_df[0, "amount"] == amount
+
+    # Check that ear marked assets have been reduced. they should only be with the last seller
+    for tid in range(1, 5):
+        assert broker.accounts[tid].earMarkedAssets.get(asset, 0) == 0
+        assert broker.accounts[tid].earMarkedCashCents == 0
+    assert broker.accounts[5].earMarkedAssets.get(asset, 0) == amount
+    assert broker.accounts[5].earMarkedCashCents == 0
+
+    # Check the total assets held in ask limits
+    assert broker.total_assets_held_in_ask_limits(asset) == amount
+    assert broker.total_cash_held_in_bid_limits(asset) == 0
+
+def test_limit_orders_fail_if_trader_has_insufficient_earmarked_assets_or_cash():
+    broker = Broker()
+    asset = "TUV"
+    broker.open_account(1)
+    broker.deposit_cash(1, 500)
+    broker.create_market(asset)
+
+    # placing a bid limit that exceeds available cash should fail
+    large_bid_limit = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=10, timestamp=1)
+    assert not broker.place_order(asset, large_bid_limit)
+
+    # check that no cash was ear marked
+    assert broker.accounts[1].earMarkedCashCents == 0
+
+    # check that no limit orders are in the orderbook
+    market = broker.markets[asset]
+    assert market._bids.height == 0
+
+    # placing an ask limit that exceeds available assets should fail
+    large_ask_limit = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=10, timestamp=2)
+    assert not broker.place_order(asset, large_ask_limit)
+
+    # check that no assets were ear marked
+    assert broker.accounts[1].earMarkedAssets.get(asset, 0) == 0
+
+    # check that no limit orders are in the orderbook
+    assert market._asks.height == 0
+
+
+def test_market_orders_fail_if_trader_has_insufficient_assets_or_cash():
+    broker = Broker()
+    asset = "WXY"
+    broker.create_market(asset)
+
+    broker.open_account(1)
+    broker.open_account(2)
+    broker.open_account(3)
+    broker.open_account(4)
+
+    # accounts 1 & 2 have insufficient cash and assets respectively
+    broker.deposit_cash(1, 500)
+    broker.accounts[2].portfolio[asset] = 5
+
+    # accounts 3 & 4 place large limit orders
+    broker.deposit_cash(3, 2000)
+    broker.accounts[4].portfolio[asset] = 20
+
+    large_bid_limit = Order(id=1, traderId=3, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=10, timestamp=1)
+    large_ask_limit = Order(id=2, traderId=4, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=10, timestamp=2)
+    assert broker.place_order(asset, large_bid_limit)
+    assert broker.place_order(asset, large_ask_limit)
+
+    # account 1 places a market buy that exceeds available cash
+    large_market_buy = Order(id=3, traderId=1, side=Side.BUY, type=OrderType.MARKET, priceCents=100, amount=10, timestamp=3)
+    assert not broker.place_order(asset, large_market_buy)
+
+    # total cash and assets held in limits should be unchanged
+    assert broker.total_assets_held_in_ask_limits(asset) == 10
+    assert broker.total_cash_held_in_bid_limits(asset) == 1000
+
+    # total cash and assets held by account 1 should be unchanged
+    assert broker.accounts[1].cashBalanceCents == 500
+
+    # account 2 places a market sell that exceeds available assets
+    large_market_sell = Order(id=4, traderId=2, side=Side.SELL, type=OrderType.MARKET, priceCents=100, amount=10, timestamp=4)
+    assert not broker.place_order(asset, large_market_sell)
+
+    # total cash and assets held in limits should be unchanged
+    assert broker.total_assets_held_in_ask_limits(asset) == 10
+    assert broker.total_cash_held_in_bid_limits(asset) == 1000
+
+    # total cash and assets held by account 2 should be unchanged
+    assert broker.accounts[2].portfolio.get(asset, 0) == 5
