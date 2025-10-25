@@ -1,0 +1,7 @@
+numpy
+pandas
+polars
+grpcio
+pytest
+matplotlib
+scipy
