@@ -26,7 +26,7 @@ def show_account_cash_balances(broker: Broker):
     acct_df = acct_df.sort_values(by='cashBalanceCents', ascending=False)
 
     # plot bar chart
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 6))
     ax.bar(acct_df['traderId'].astype(str), acct_df['cashBalanceCents'])
     ax.set_xlabel('Trader ID')
     ax.set_ylabel('Cash Balance (cents)')
@@ -50,7 +50,7 @@ def show_account_asset_balances(broker: Broker, asset:str):
     asset_df = asset_df.sort_values(by='assetBalance', ascending=False)
 
     # plot bar chartss
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 6))
     ax.bar(asset_df['traderId'].astype(str), asset_df['assetBalance'])
     ax.set_xlabel('Trader ID')
     ax.set_ylabel(f'{asset} Balance (units)')
@@ -65,7 +65,7 @@ def depth_chart(broker: Broker, asset: str):
     ask_depth = pd.DataFrame(broker.get_ask_depth(asset))
 
     # Plot bid and ask depth curves
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(12, 6))
     ax.step(bid_depth['priceCents'], bid_depth['cumAmount'], where='post', label='Bid Depth', color='green')
     ax.step(ask_depth['priceCents'], ask_depth['cumAmount'], where='post', label='Ask Depth', color='red')
     ax.set_xlabel('Price (cents)')
