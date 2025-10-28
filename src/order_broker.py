@@ -1,53 +1,10 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from src.models import Order, OrderType, Match, Side
+from src.models import Order, OrderType, Match, Side, Account
 from src.order_matching import Matcher
 from typing import Union
 from copy import deepcopy
 import polars as pl
-
-@dataclass
-class Account:
-    traderId: int
-    cashBalanceCents: int = 0
-    
-    # asset - amount
-    portfolio: dict[str, int] = field(default_factory= dict)
-
-    earMarkedCashCents: int = 0
-    earMarkedAssets: dict[str, int] = field(default_factory= dict)
-
-    def __post_init__(self):
-        assert self.traderId >= 0
-        assert self.cashBalanceCents >= 0
-        for asset, amount in self.portfolio.items():
-            assert amount >= 0
-        assert self.earMarkedCashCents >= 0
-        for asset, amount in self.earMarkedAssets.items():
-            assert amount >= 0
-
-    def tradable_balance_cents(self) -> int:
-        return self.cashBalanceCents - self.earMarkedCashCents
-    
-    def tradable_asset_amount(self, asset: str) -> int:
-        heldAmount = 0
-        if asset in self.earMarkedAssets.keys():
-            heldAmount = self.earMarkedAssets[asset]
-        
-        totalAmount = 0
-        if asset in self.portfolio.keys():
-            totalAmount = self.portfolio[asset]
-        
-        return totalAmount - heldAmount
-    
-    def earmarked_asset_amount(self, asset: str) -> int:
-        if asset in self.earMarkedAssets.keys():
-            return self.earMarkedAssets[asset]
-        return 0
-
-    def earmarked_cash_cents(self) -> int:
-        return self.earMarkedCashCents
-
 
 
 class Broker:

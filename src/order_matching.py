@@ -224,7 +224,3 @@ class Matcher():
     def cancel_all_orders_for_trader(self, traderId: int):
         self._asks = self._asks.filter(pl.col("traderId") != traderId)
         self._bids = self._bids.filter(pl.col("traderId") != traderId)
-
-        pass
-
-        

@@ -2,26 +2,25 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from src.models import Order, OrderType, Match, Side
+from src.models import Order, OrderType, Match, Side, Account
 from src.order_broker import Broker
 from typing import Union
 from copy import deepcopy
-
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import polars as pl
 
-#TODO plot L1 order history
-
 def show_account_cash_balances(broker: Broker):
+    """ Show total and earmarked cash balances for all accounts """
     # fetch all account info
-    accounts_info = broker.accounts.values()
+    accounts_info: list[Account] = [acct for acct in broker.accounts.values()]
 
     # build DataFrame
     acct_df = pd.DataFrame({
         'traderId': [acct.traderId for acct in accounts_info],
-        'cashBalanceCents': [acct.cashBalanceCents for acct in accounts_info]
+        'cashBalanceCents': [acct.cashBalanceCents for acct in accounts_info],
+        'earmarkedCashCents': [acct.earMarkedCashCents for acct in accounts_info]
     })
 
     # sort descending by cash balance
@@ -29,34 +28,51 @@ def show_account_cash_balances(broker: Broker):
 
     # plot bar chart
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(acct_df['traderId'].astype(str), acct_df['cashBalanceCents'])
+    ax.bar(acct_df['traderId'].astype(str), 
+           acct_df['cashBalanceCents'] - acct_df['earmarkedCashCents'], 
+           label='Available Cash', color='green')
+    ax.bar(acct_df['traderId'].astype(str), 
+           acct_df['earmarkedCashCents'], 
+           bottom=acct_df['cashBalanceCents'] - acct_df['earmarkedCashCents'], 
+           label='Earmarked Cash', color='orange')
     ax.set_xlabel('Trader ID')
     ax.set_ylabel('Cash Balance (cents)')
     ax.set_title('Account Cash Balances After Trading Session')
+    ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
 
 def show_account_asset_balances(broker: Broker, asset:str):
-
+    """
+    Show total and earmarked asset balances for all accounts
+    """
     # fetch all account info
-    accounts_info = broker.accounts.values()
+    accounts_info: list[Account] = [acct for acct in broker.accounts.values()]
 
     # build DataFrame for asset balances
     asset_df = pd.DataFrame({
         'traderId': [acct.traderId for acct in accounts_info],
-        'assetBalance': [acct.portfolio.get(asset, 0) for acct in accounts_info]
+        'assetBalance': [acct.portfolio.get(asset, 0) for acct in accounts_info],
+        'earmarkedAssets': [acct.earMarkedAssets.get(asset, 0) for acct in accounts_info]
     })
 
     # sort descending by asset balance
     asset_df = asset_df.sort_values(by='assetBalance', ascending=False)
 
-    # plot bar chartss
+    # plot stacked bar chart (available assets over earmarked assets)
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(asset_df['traderId'].astype(str), asset_df['assetBalance'])
+    ax.bar(asset_df['traderId'].astype(str), 
+           asset_df['assetBalance'] - asset_df['earmarkedAssets'], 
+           label='Available Assets', color='blue')
+    ax.bar(asset_df['traderId'].astype(str), 
+           asset_df['earmarkedAssets'], 
+           bottom=asset_df['assetBalance'] - asset_df['earmarkedAssets'], 
+           label='Earmarked Assets', color='orange')
     ax.set_xlabel('Trader ID')
-    ax.set_ylabel(f'{asset} Balance (units)')
-    ax.set_title(f'Account {asset} Balances After Trading Session')
+    ax.set_ylabel(f'Asset Balance of {asset}')
+    ax.set_title(f'Account Asset Balances of {asset} After Trading Session')
+    ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
     plt.show()
