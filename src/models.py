@@ -27,16 +27,6 @@ class Order:
         assert not (self.type == OrderType.MARKET and self.priceCents != 0), \
                 "Market orders must have priceCents set to 0"
 
-class OrderStatus(Enum):
-    SETTLED = 0
-    PENDING = 1
-    ERROR = 2
-
-@dataclass
-class SettlementInfo:
-    remaining_amount: int
-    status: OrderStatus
-
 @dataclass
 class Match:
     marketOrder: Order

@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from src.models import Order, OrderType, Match, Side, OrderStatus, SettlementInfo
+from src.models import Order, OrderType, Match, Side
 from src.order_broker import Broker
 from typing import Union
 from copy import deepcopy
