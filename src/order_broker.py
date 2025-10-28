@@ -52,8 +52,6 @@ class Account:
 
 class Broker:
 
-    # TODO track L1 orderbook history
-
     def __init__(self) -> None:
         # traderId - account
         self.accounts: dict[int, Account] = {}
@@ -61,13 +59,8 @@ class Broker:
         # asset - Matcher
         self.markets: dict[str, Matcher] = {}
 
-        self.l1_hist = pl.DataFrame(
-            schema={
-                "best_bid" : pl.Int64,
-                "best_ask" : pl.Int64,
-                "timestamp" : pl.Int64
-            }
-        )
+        # asset - L1 history DataFrame
+        self.l1_hist: dict[str, pl.DataFrame] = {}
 
     def open_account(self, traderId: int):
         assert not traderId in self.accounts.keys()
@@ -77,8 +70,12 @@ class Broker:
     def close_account(self, traderId: int) -> Account:
         assert traderId in self.accounts.keys()
 
-        # TODO cancel all pending orders in all markets for this trader
+        # cancel all open orders for this trader
+        for asset in self.markets.keys():
+            market = self.markets[asset]
+            market.cancel_all_orders_for_trader(traderId)
 
+        # pop and return the account
         account = self.accounts[traderId]
         self.accounts.pop(traderId)
         return account
@@ -189,13 +186,12 @@ class Broker:
             # earmark funds if limit order
             if order.type == OrderType.LIMIT:
                 self._earmark_funds_for_limit_order(asset, order)
-                             
-            # place the order in the market
+
+            # place order
             if(order.type == OrderType.LIMIT):
                 self.markets[asset].place_limit_order(order)
                 isSuccessful = True   
             elif(order.type == OrderType.MARKET):
-
                 tradableCashCents = self.accounts[order.traderId].tradable_balance_cents()
                 tradableAssetAmount = self.accounts[order.traderId].tradable_asset_amount(asset)
                 if self.markets[asset].match_market_order(order, 
@@ -263,7 +259,16 @@ class Broker:
             }
         )
 
-        self.l1_hist = pl.concat([self.l1_hist, new_row])
+        if(asset not in self.l1_hist.keys()):
+            self.l1_hist[asset] = pl.DataFrame(
+                schema={
+                    "best_bid" : pl.Int64,
+                    "best_ask" : pl.Int64,
+                    "timestamp" : pl.Int64
+                }
+            )
+
+        self.l1_hist[asset] = pl.concat([self.l1_hist[asset], new_row])
 
     def _settle_trade(self, match: Match, asset: str) -> None:      
         market = match.marketOrder

@@ -428,3 +428,112 @@ def test_market_orders_fail_if_trader_has_insufficient_assets_or_cash():
     # total cash and assets held by account 2 should be unchanged
     assert broker.accounts[2].portfolio.get(asset, 0) == 5
     assert broker.accounts[2].cashBalanceCents == 0
+
+def test_l1_history_is_recorded_correctly_for_a_single_asset():
+    broker = Broker()
+    asset = "DEF"
+    broker.open_account(1)
+    broker.deposit_cash(1, 10000)
+    broker.deposit_asset(1, 10000, asset)
+    broker.create_market(asset)
+
+    # place limit orders and check L1 history
+    limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, timestamp=1)
+    broker.place_order(asset, limit_order1)
+    l1_hist = broker.l1_hist[asset]
+    assert l1_hist.height == 1
+    assert l1_hist[0, "best_bid"] == 100
+    assert l1_hist[0, "best_ask"] == None
+    assert l1_hist[0, "timestamp"] == 1
+
+    limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=3, timestamp=2)
+    broker.place_order(asset, limit_order2)
+    l1_hist = broker.l1_hist[asset]
+    assert l1_hist.height == 2
+    assert l1_hist[1, "best_bid"] == 100
+    assert l1_hist[1, "best_ask"] == 150
+    assert l1_hist[1, "timestamp"] == 2
+
+    # place a slightly better bid limit
+    limit_order3 = Order(id=3, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=120, amount=2, timestamp=3)
+    broker.place_order(asset, limit_order3)
+    l1_hist = broker.l1_hist[asset]
+    assert l1_hist.height == 3
+    assert l1_hist[2, "best_bid"] == 120
+    assert l1_hist[2, "best_ask"] == 150
+    assert l1_hist[2, "timestamp"] == 3
+
+    # place a better ask limit
+    limit_order4 = Order(id=4, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=130, amount=4, timestamp=4)
+    broker.place_order(asset, limit_order4)
+    l1_hist = broker.l1_hist[asset]
+    assert l1_hist.height == 4
+    assert l1_hist[3, "best_bid"] == 120
+    assert l1_hist[3, "best_ask"] == 130
+    assert l1_hist[3, "timestamp"] == 4
+
+
+    # try to place a market buy that can be fully matched
+    market_order1 = Order(id=5, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=4, timestamp=5)
+    broker.place_order(asset, market_order1)
+    l1_hist = broker.l1_hist[asset]
+    assert l1_hist.height == 5
+    assert l1_hist[4, "best_bid"] == 120
+    assert l1_hist[4, "best_ask"] == 150
+    assert l1_hist[4, "timestamp"] == 5
+
+    # try to place a market sell that can be fully matched
+    market_order2 = Order(id=6, traderId=1, side=Side.SELL, type=OrderType.MARKET, amount=3, timestamp=6)
+    broker.place_order(asset, market_order2)
+    l1_hist = broker.l1_hist[asset]
+    assert l1_hist.height == 6
+    assert l1_hist[5, "best_bid"] == 100
+    assert l1_hist[5, "best_ask"] == 150
+    assert l1_hist[5, "timestamp"] == 6
+
+    # A failed order should not update L1 history
+    market_order3 = Order(id=7, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=1000, timestamp=7)
+    broker.place_order(asset, market_order3)
+    l1_hist = broker.l1_hist[asset]
+    assert l1_hist.height == 6  # no change
+    assert l1_hist[5, "best_bid"] == 100
+    assert l1_hist[5, "best_ask"] == 150
+    assert l1_hist[5, "timestamp"] == 6
+
+
+def test_l1_history_is_recorded_correctly_for_multiple_assets():
+    broker = Broker()
+    assets = ["AAA", "BBB"]
+    broker.open_account(1)
+    broker.deposit_cash(1, 10000)
+    for asset in assets:
+        broker.create_market(asset)
+        broker.deposit_asset(1, 10000, asset)
+
+    # place limit orders in both markets
+    limit_orders_AAA = [
+        Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, timestamp=1),
+        Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=3, timestamp=2),
+    ]
+    limit_orders_BBB = [
+        Order(id=3, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=200, amount=4, timestamp=1),
+        Order(id=4, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=250, amount=6, timestamp=2),
+    ]
+
+    for order in limit_orders_AAA:
+        broker.place_order("AAA", order)
+
+    for order in limit_orders_BBB:
+        broker.place_order("BBB", order)
+
+    # check L1 history for AAA
+    l1_hist_AAA = broker.l1_hist["AAA"]
+    assert l1_hist_AAA.height == 2
+    assert l1_hist_AAA[1, "best_bid"] == 100
+    assert l1_hist_AAA[1, "best_ask"] == 150    
+
+    # check L1 history for BBB
+    l1_hist_BBB = broker.l1_hist["BBB"]
+    assert l1_hist_BBB.height == 2
+    assert l1_hist_BBB[1, "best_bid"] == 200
+    assert l1_hist_BBB[1, "best_ask"] == 250
