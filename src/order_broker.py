@@ -6,6 +6,9 @@ from typing import Union
 from copy import deepcopy
 import polars as pl
 
+# TODO Log all trades placed, matched, settled, cancelled, or failed
+# TODO API should be FIX compliant https://www.fixtrading.org/implementation-guide/
+# TODO GRPC API?
 
 class Broker:
 
