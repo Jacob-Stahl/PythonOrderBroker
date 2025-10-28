@@ -345,7 +345,7 @@ def test_large_market_orders_are_correctly_matched():
     assert broker.accounts[6].cashBalanceCents == expected_cash_balance
     assert broker.accounts[6].portfolio.get(asset, 0) == total_amount
 
-def test_limit_orders_fail_if_trader_has_insufficient_earmarked_assets_or_cash():
+def test_limit_orders_fail_if_trader_has_insufficient_tradable_assets_or_cash():
     broker = Broker()
     asset = "TUV"
     broker.open_account(1)
@@ -363,6 +363,10 @@ def test_limit_orders_fail_if_trader_has_insufficient_earmarked_assets_or_cash()
     market = broker.markets[asset]
     assert market._bids.height == 0
 
+    # check that asset and cash balances are unchanged
+    assert broker.accounts[1].cashBalanceCents == 500
+    assert broker.accounts[1].portfolio.get(asset, 0) == 0
+
     # placing an ask limit that exceeds available assets should fail
     large_ask_limit = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=10, timestamp=2)
     assert not broker.place_order(asset, large_ask_limit)
@@ -372,6 +376,10 @@ def test_limit_orders_fail_if_trader_has_insufficient_earmarked_assets_or_cash()
 
     # check that no limit orders are in the orderbook
     assert market._asks.height == 0
+
+    # check that asset and cash balances are unchanged
+    assert broker.accounts[1].cashBalanceCents == 500
+    assert broker.accounts[1].portfolio.get(asset, 0) == 0
 
 
 def test_market_orders_fail_if_trader_has_insufficient_assets_or_cash():

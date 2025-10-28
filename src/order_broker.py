@@ -17,6 +17,15 @@ class Account:
     earMarkedCashCents: int = 0
     earMarkedAssets: dict[str, int] = field(default_factory= dict)
 
+    def __post_init__(self):
+        assert self.traderId >= 0
+        assert self.cashBalanceCents >= 0
+        for asset, amount in self.portfolio.items():
+            assert amount >= 0
+        assert self.earMarkedCashCents >= 0
+        for asset, amount in self.earMarkedAssets.items():
+            assert amount >= 0
+
     def tradable_balance_cents(self) -> int:
         return self.cashBalanceCents - self.earMarkedCashCents
     
@@ -133,6 +142,32 @@ class Broker:
         assert traderId in self.accounts.keys(), f"Account for trader {traderId} does not exist"
         # return a deep copy to prevent external mutation
         return deepcopy(self.accounts[traderId])
+    
+    @staticmethod
+    def _validate_order(asset: str, order: Order, account: Account) -> bool:
+        assert order.amount >= 0 
+        assert order.priceCents >= 0
+        if order.side == Side.BUY and order.type == OrderType.LIMIT:
+            assert account.tradable_balance_cents() >= order.amount * order.priceCents, \
+                f"Trader {order.traderId} does not have enough cash to place this buy"
+        elif order.side == Side.SELL:
+            assert account.tradable_asset_amount(asset) >= order.amount, \
+                f"Trader {order.traderId} does not have enough of asset '{asset}' to place this sell"
+        return True
+    
+    def _earmark_funds_for_limit_order(self, asset: str, order: Order):
+        assert order.type == OrderType.LIMIT
+        account = self.accounts[order.traderId]
+        if order.side == Side.BUY:
+            assert account.tradable_balance_cents() >= order.amount * order.priceCents, \
+                f"Trader {order.traderId} does not have enough cash to place this buy"
+            account.earMarkedCashCents += order.amount * order.priceCents
+        elif order.side == Side.SELL:
+            assert account.tradable_asset_amount(asset) >= order.amount, \
+                f"Trader {order.traderId} does not have enough of asset '{asset}' to place this sell"
+            if asset not in account.earMarkedAssets.keys():
+                account.earMarkedAssets[asset] = 0
+            account.earMarkedAssets[asset] += order.amount
 
     def place_order(self, 
                     asset: str, 
@@ -143,44 +178,17 @@ class Broker:
         assert order.amount >= 0 
         assert order.priceCents >= 0
 
-        originalCashBalanceCents: int = 0
-        originalAssetBalance: int = 0
-        originalEarMarkedCashCents: int = self.accounts[order.traderId].earmarked_cash_cents()
-        originalEarMarkedAssetAmount: int = self.accounts[order.traderId].earmarked_asset_amount(asset)
+        account = self.accounts[order.traderId]
+        account_snapshot = deepcopy(account)
         isSuccessful: bool = False
 
         try:
-            # validate the trader has enough cash to settle the order
-            # record original balances to revert in case of failure
-            if order.side == Side.BUY:
-                if order.type == OrderType.LIMIT:
-                    assert self.accounts[order.traderId].tradable_balance_cents() >= order.amount * order.priceCents, \
-                        f"Trader {order.traderId} does not have enough cash to place this buy"
-
-                originalCashBalanceCents = self.accounts[order.traderId].cashBalanceCents
-
-            elif order.side == Side.SELL:  # Sell
-                assert asset in self.accounts[order.traderId].portfolio.keys()
-                assert self.accounts[order.traderId].tradable_asset_amount(asset) >= order.amount, \
-                    f"Trader {order.traderId} does not have enough of asset '{asset}' to place this sell"
-                originalAssetBalance = self.accounts[order.traderId].portfolio[asset]
-            else:
-                raise Exception(f"Couldn't resolve side")
+            # validate the order
+            self._validate_order(asset, order, self.accounts[order.traderId])
             
-            # for limit orders, ear mark the cash / assets
+            # earmark funds if limit order
             if order.type == OrderType.LIMIT:
-                if order.side == Side.BUY:
-                    assert self.accounts[order.traderId].tradable_balance_cents() >= order.amount * order.priceCents, \
-                        f"Trader {order.traderId} does not have enough cash to place this buy"
-                    
-                    self.accounts[order.traderId].earMarkedCashCents += order.amount * order.priceCents
-                elif order.side == Side.SELL:
-                    if asset not in self.accounts[order.traderId].earMarkedAssets.keys():
-                        self.accounts[order.traderId].earMarkedAssets[asset] = 0
-                    assert self.accounts[order.traderId].tradable_asset_amount(asset) >= order.amount, \
-                        f"Trader {order.traderId} does not have enough of asset '{asset}' to place this sell"
-                    
-                    self.accounts[order.traderId].earMarkedAssets[asset] += order.amount
+                self._earmark_funds_for_limit_order(asset, order)
                              
             # place the order in the market
             if(order.type == OrderType.LIMIT):
@@ -205,14 +213,7 @@ class Broker:
                 raise NotImplementedError(f"Unsupported order type {order.type}")
         except Exception as ex:
             # revert account to the previous state if there is an exception
-            if order.side == Side.SELL:
-                self.accounts[order.traderId].portfolio[asset] = originalAssetBalance
-                if order.type == OrderType.LIMIT:
-                    self.accounts[order.traderId].earMarkedAssets[asset] = originalEarMarkedAssetAmount
-            else: # BUY
-                self.accounts[order.traderId].cashBalanceCents = originalCashBalanceCents
-                if order.type == OrderType.LIMIT:
-                    self.accounts[order.traderId].earMarkedCashCents = originalEarMarkedCashCents
+            self.accounts[order.traderId] = account_snapshot
             isSuccessful = False
 
         if isSuccessful:
