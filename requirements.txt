@@ -5,3 +5,5 @@ grpcio
 pytest
 matplotlib
 scipy
+pyarrow
+ipykernel
