@@ -537,3 +537,26 @@ def test_l1_history_is_recorded_correctly_for_multiple_assets():
     assert l1_hist_BBB.height == 2
     assert l1_hist_BBB[1, "best_bid"] == 200
     assert l1_hist_BBB[1, "best_ask"] == 250
+
+def test_close_account():
+    broker = Broker()
+    broker.open_account(1)
+    broker.deposit_cash(1, 1000)
+    broker.accounts[1].portfolio["XYZ"] = 50
+
+    # place some limit orders
+    asset = "XYZ"
+    broker.create_market(asset)
+    limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, timestamp=1)
+    limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=10, timestamp=2)
+    broker.place_order(asset, limit_order1)
+    broker.place_order(asset, limit_order2)
+
+    # closing account should return cash and assets to zero
+    broker.close_account(1)
+    assert 1 not in broker.accounts
+
+    # check that no limit orders are in the orderbook
+    market = broker.markets[asset]
+    assert market._asks.height == 0
+    assert market._bids.height == 0

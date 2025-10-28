@@ -235,6 +235,24 @@ class TestMatcher:
         assert len(matcher._bids) == 0
         assert len(matcher._asks) == 0
 
+    def test_cancel_all_orders_for_trader(self, sample_buy_order, sample_sell_order):
+        """Test cancelling all orders for a specific trader."""
+        matcher = Matcher()
+        
+        # Place orders for two traders
+        matcher.place_limit_order(sample_buy_order)  # traderId=100
+        matcher.place_limit_order(sample_sell_order)  # traderId=200
+        
+        # Cancel all orders for traderId=100
+        matcher.cancel_all_orders_for_trader(traderId=sample_buy_order.traderId)
+        
+        # Verify that only traderId=200's order remains
+        assert len(matcher._bids) == 0
+        assert len(matcher._asks) == 1
+        
+        remaining_ask = matcher._asks.row(0, named=True)
+        assert remaining_ask['traderId'] == sample_sell_order.traderId
+
 class TestOrderConversion:
     """Test the pl_row_to_order function."""
     

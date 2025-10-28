@@ -82,7 +82,6 @@ class Matcher():
 
         return depth
 
-        
     def dequeue_match(self) -> Union[None, Match]:
         if any(self._matches):
             match = self._matches[0]
@@ -117,6 +116,7 @@ class Matcher():
                            ) -> bool:
         """ 
         Returns True if fully matched, False failed to find a complete match
+        Market orders are filled or killed
         
         Args:
             marketOrder (Order): The market order to match
@@ -220,3 +220,11 @@ class Matcher():
         for row in self._bids.iter_rows(named=True):
             total_cash += int(row["amount"]) * int(row["priceCents"])
         return total_cash
+        
+    def cancel_all_orders_for_trader(self, traderId: int):
+        self._asks = self._asks.filter(pl.col("traderId") != traderId)
+        self._bids = self._bids.filter(pl.col("traderId") != traderId)
+
+        pass
+
+        
