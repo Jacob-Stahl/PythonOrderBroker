@@ -175,7 +175,7 @@ class Broker:
             else:
                 raise NotImplementedError(f"Unsupported order type {order.type}")
         except Exception as ex:
-            logger.exception("Failed to place order. Rolling back changes...")
+            logger.info("Failed to place order. Rolling back changes...")
             # revert account to the previous state if there is an exception
             self.accounts[order.traderId] = account_snapshot
             isSuccessful = False

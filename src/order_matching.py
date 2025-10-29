@@ -5,8 +5,10 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 import polars as pl
 from src.models import Order, OrderType, Match, Side
+from src.broker_logging import logger
 from copy import deepcopy
 import sys
+
 
 def pl_row_to_order(row: pl.DataFrame) -> Order:
     assert len(row) == 1
@@ -133,6 +135,7 @@ class Matcher():
         orig_bids = self._bids.clone()
         orig_asks = self._asks.clone()
         def rollback():
+            logger.info("Rolling back changes...")
             self._bids = orig_bids
             self._asks = orig_asks
 
@@ -200,15 +203,21 @@ class Matcher():
             self._bids = self._bids.filter(~pl.col("id").is_in(orderIdsToRemove))
 
         # check if we exceeded available funds or assets
-        if exceededAvailableFunds or exceededAvailableAssets:
+        if exceededAvailableFunds or exceededAvailableAssets:     
+            funds_msg = f"Exceeded available cash of {availableCash} cents" if exceededAvailableFunds else ""
+            assets_msg = f"Exceeded available assets of {availableAssets}" if exceededAvailableAssets else ""
+            logger.info(f"Failed to match market order {asdict(marketOrder)}. {funds_msg} {assets_msg}")
+
             rollback()
             return False
 
         # validate that match fulfils the order
         if match.fulfils_market_order():
+            logger.info(f"Matched market order {asdict(marketOrder)} with limit orders {[asdict(o) for o in match.limitOrders]}")
             self._matches.append(match)
             return True
         else:
+            logger.info(f"Failed to fully match market order {asdict(marketOrder)}. Rolling back.")
             rollback()
             return False
         
