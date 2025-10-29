@@ -15,7 +15,7 @@ class OrderType(Enum):
 @dataclass
 class Order:
     id: int
-    timestamp: int
+    timestamp: int # TODO change this to tick number? "timestamp" is a bit misleading.
     traderId: int
     side: Side
     type: OrderType
