@@ -1,14 +1,15 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from enum import Enum
 from src.models import Order, OrderType, Match, Side, Account
 from src.order_matching import Matcher
 from typing import Union
 from copy import deepcopy
 import polars as pl
+from src.broker_logging import logger
 
 # TODO Log all trades placed, matched, settled, cancelled, or failed
 # TODO API should be FIX compliant https://www.fixtrading.org/implementation-guide/
-# TODO GRPC API?
+# TODO gRPC API?
 
 class Broker:
 
@@ -130,10 +131,16 @@ class Broker:
                     asset: str, 
                     order: Order) -> bool:
 
-        assert asset in self.markets.keys()
-        assert order.traderId in self.accounts.keys()
-        assert order.amount >= 0 
-        assert order.priceCents >= 0
+        logger.info(f"Placing order {asdict(order)}")
+
+        try:
+            assert asset in self.markets.keys()
+            assert order.traderId in self.accounts.keys()
+            assert order.amount >= 0 
+            assert order.priceCents >= 0
+        except AssertionError as e:
+            logger.exception("Invalid Order!")
+
 
         account = self.accounts[order.traderId]
         account_snapshot = deepcopy(account)
@@ -168,6 +175,7 @@ class Broker:
             else:
                 raise NotImplementedError(f"Unsupported order type {order.type}")
         except Exception as ex:
+            logger.exception("Failed to place order. Rolling back changes...")
             # revert account to the previous state if there is an exception
             self.accounts[order.traderId] = account_snapshot
             isSuccessful = False
@@ -176,6 +184,7 @@ class Broker:
             # update l1 hist
             self._update_l1_hist(asset, order.timestamp)
 
+        logger.info(f"Order placed sucessfully {asdict(order)}")
 
         return isSuccessful
         
