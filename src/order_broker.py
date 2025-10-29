@@ -5,7 +5,7 @@ from src.order_matching import Matcher
 from typing import Union
 from copy import deepcopy
 import polars as pl
-from src.broker_logging import logger
+from src.broker_logging import logger, l1_logger
 
 # TODO API should be FIX compliant https://www.fixtrading.org/implementation-guide/
 # TODO gRPC API?
@@ -219,6 +219,8 @@ class Broker:
 
 
     def _update_l1_hist(self, asset: str, timestamp: int):
+        
+        # Update L1 history DataFrame
         new_row: pl.DataFrame = pl.DataFrame(
             {
                 "best_bid" : self.get_highest_bid(asset),
@@ -226,7 +228,6 @@ class Broker:
                 "timestamp" : timestamp
             }
         )
-
         if(asset not in self.l1_hist.keys()):
             self.l1_hist[asset] = pl.DataFrame(
                 schema={
@@ -235,8 +236,16 @@ class Broker:
                     "timestamp" : pl.Int64
                 }
             )
-
         self.l1_hist[asset] = pl.concat([self.l1_hist[asset], new_row])
+        
+        # Push updates to L1 logger
+        l1_log_event = {
+            "asset": asset,
+            "best_bid": new_row[0, "best_bid"],
+            "best_ask": new_row[0, "best_ask"],
+            "timestamp": new_row[0, "timestamp"]
+        }
+        l1_logger.info(f"{l1_log_event}")
 
     def _settle_trade(self, match: Match, asset: str) -> None:      
         market = match.marketOrder
