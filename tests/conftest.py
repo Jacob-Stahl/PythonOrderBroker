@@ -5,6 +5,8 @@ import pytest
 import sys
 import os
 from pathlib import Path
+import polars as pl
+import logging
 
 # Add src directory to path so we can import modules
 src_path = Path(__file__).parent.parent / "src"
@@ -20,7 +22,11 @@ except ImportError as e:
     print(f"Src path exists: {src_path.exists()}")
     raise
 
-import polars as pl
+# prevents logs from being output during testing
+# TODO find a cleaner way to do this
+logging.getLogger("broker").disabled = True
+logging.getLogger("l1_data").disabled = True
+
 
 @pytest.fixture
 def sample_buy_order():
