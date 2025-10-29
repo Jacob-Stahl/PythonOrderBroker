@@ -7,7 +7,6 @@ from copy import deepcopy
 import polars as pl
 from src.broker_logging import logger
 
-# TODO Log all trades placed, matched, settled, cancelled, or failed
 # TODO API should be FIX compliant https://www.fixtrading.org/implementation-guide/
 # TODO gRPC API?
 
