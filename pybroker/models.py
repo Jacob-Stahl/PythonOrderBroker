@@ -2,6 +2,7 @@ from typing import Union
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 import polars as pl
+from random import randint
 
 # buy sell enum
 class Side(Enum):
@@ -14,13 +15,13 @@ class OrderType(Enum):
 
 @dataclass
 class Order:
-    id: int
-    timestamp: int # TODO change this to tick number? "timestamp" is a bit misleading.
     traderId: int
     side: Side
     type: OrderType
     amount: int
     priceCents: int = 0
+    id: int = randint(0, int(2**30))
+    timestamp: int = -1
 
     def __post_init__(self):
         # Ensure priceCents is 0 for market orders

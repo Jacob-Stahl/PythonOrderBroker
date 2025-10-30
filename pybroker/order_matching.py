@@ -28,13 +28,13 @@ class Matcher():
 
         # Initialize empty DataFrames with the correct schema
         schema = {
-            "id": pl.Int64,
-            "timestamp": pl.Int64,
             "traderId": pl.Int64,
             "side": pl.Int64,
             "type": pl.Int64,
             "amount": pl.Int64,
             "priceCents": pl.Int64,
+            "id": pl.Int64,
+            "timestamp": pl.Int64,
         }
         self._bids: pl.DataFrame = pl.DataFrame(schema=schema).with_row_index()
         self._asks: pl.DataFrame = pl.DataFrame(schema=schema).with_row_index()

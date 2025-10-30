@@ -13,6 +13,9 @@ from pybroker.broker_logging import logger, l1_logger
 class Broker:
 
     def __init__(self) -> None:
+
+        self.tick_count: int = 0
+
         # traderId - account
         self.accounts: dict[int, Account] = {}
 
@@ -21,6 +24,10 @@ class Broker:
 
         # asset - L1 history DataFrame
         self.l1_hist: dict[str, pl.DataFrame] = {}
+
+    def next_tick(self) -> int:
+        self.tick_count += 1
+        return self.tick_count
 
     def open_account(self, traderId: int):
         assert not traderId in self.accounts.keys()
@@ -129,10 +136,12 @@ class Broker:
     def place_order(self, 
                     asset: str, 
                     order: Order) -> bool:
-
+        
+        order.timestamp = self.next_tick()
         logger.info(f"Placing order {asdict(order)}")
 
         try:
+            assert order.timestamp >= 0
             assert asset in self.markets.keys()
             assert order.traderId in self.accounts.keys()
             assert order.amount >= 0 
