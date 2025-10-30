@@ -233,3 +233,8 @@ class Matcher():
     def cancel_all_orders_for_trader(self, traderId: int):
         self._asks = self._asks.filter(pl.col("traderId") != traderId)
         self._bids = self._bids.filter(pl.col("traderId") != traderId)
+
+    def clear_order_book(self):
+        self._asks = self._asks.slice(0,0)
+        self._bids = self._bids.slice(0,0)
+        self._matches = []

@@ -46,10 +46,21 @@ class Broker:
         account = self.accounts[traderId]
         self.accounts.pop(traderId)
         return account
+    
+    def end_trading_day(self):
+        # clear all markets
+        for market in self.markets.values():
+            market.clear_order_book()
+
+        # reset earmarked funds from all accounts
+        for account in self.accounts.values():
+            account.earMarkedCashCents = 0
+            account.earMarkedAssets = {}
 
     def create_market(self, asset: str):
         assert not asset in self.markets.keys()
         self.markets[asset] = Matcher()
+        self._init_l1_hist(asset)
 
     def destroy_market(self, asset: str):
         assert asset in self.markets.keys()
@@ -227,16 +238,7 @@ class Broker:
         return self.markets[asset].get_ask_depth()
 
 
-    def _update_l1_hist(self, asset: str, timestamp: int):
-        
-        # Update L1 history DataFrame
-        new_row: pl.DataFrame = pl.DataFrame(
-            {
-                "best_bid" : self.get_highest_bid(asset),
-                "best_ask" : self.get_lowest_ask(asset),
-                "timestamp" : timestamp
-            }
-        )
+    def _init_l1_hist(self, asset: str):
         if(asset not in self.l1_hist.keys()):
             self.l1_hist[asset] = pl.DataFrame(
                 schema={
@@ -245,6 +247,20 @@ class Broker:
                     "timestamp" : pl.Int64
                 }
             )
+
+    def _update_l1_hist(self, asset: str, timestamp: int):
+        
+        # ensure L1 history DataFrame exists
+        self._init_l1_hist(asset)
+
+        # Update L1 history DataFrame
+        new_row: pl.DataFrame = pl.DataFrame(
+            {
+                "best_bid" : self.get_highest_bid(asset),
+                "best_ask" : self.get_lowest_ask(asset),
+                "timestamp" : timestamp
+            }
+        )
         self.l1_hist[asset] = pl.concat([self.l1_hist[asset], new_row])
         
         # Push updates to L1 logger
@@ -255,6 +271,10 @@ class Broker:
             "timestamp": new_row[0, "timestamp"]
         }
         l1_logger.info(f"{l1_log_event}")
+
+    def get_l1_history(self, asset: str) -> pl.DataFrame:
+        assert asset in self.l1_hist.keys(), f"L1 history for asset '{asset}' does not exist"
+        return self.l1_hist[asset].clone()
 
     def _settle_trade(self, match: Match, asset: str) -> None:      
         market = match.marketOrder

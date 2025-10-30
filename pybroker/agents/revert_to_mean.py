@@ -1,4 +1,4 @@
-from agent import *
+from pybroker.agents.agent import *
 from pybroker.agents.agent import Actions, Observations
 from pybroker.models import *
 from random import shuffle
@@ -18,6 +18,9 @@ class RevertToMean(Agent):
 
         mean = observations.moving_average_100
         std = observations.standard_deviation_100
+
+        if( mean is None or std is None):
+            return super().policy(observations)
 
         buy_price = int(max(0, mean - (std * self.sigma)))
         sell_price = int(max(0, mean + (std * self.sigma)))

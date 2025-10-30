@@ -1,4 +1,4 @@
-from agent import *
+from pybroker.agents.agent import *
 from pybroker.agents.agent import Actions, Observations
 from pybroker.models import *
 import random
@@ -13,7 +13,7 @@ class RandomMonkey(Agent):
     Randomly generates orders based on normal and poisson distributions
     
     Parameters:
-    - prefered_bid_price: int
+    - mean_bid_price: int
         The mean price (in cents) that this agent will place bid orders around
     - bid_price_std: float
         The standard deviation (in cents) that this agent will place bid orders around
@@ -30,21 +30,21 @@ class RandomMonkey(Agent):
     """
 
     def __init__(self,
-                    prefered_bid_price:int = 320,
-                    bid_price_std: float = 4,
-                    prefered_ask_price:int = 320,
-                    ask_price_std: float = 4,
-                    order_size_k: int= 3,
+                    mean_bid:int = 320,
+                    bid_std: float = 4,
+                    mean_ask:int = 320,
+                    ask_std: float = 4,
+                    order_size_k: int = 3,
                     bid_fraction: float = 0.5,
                     limit_fraction: float = 0.5,
                  
                  ) -> None:
         super().__init__()
 
-        self.prefered_bid_price = prefered_bid_price
-        self.bid_price_std = bid_price_std
-        self.prefered_ask_price = prefered_ask_price
-        self.ask_price_std = ask_price_std
+        self.mean_bid = mean_bid
+        self.bid_std = bid_std
+        self.mean_ask = mean_ask
+        self.ask_std = ask_std
         self.order_size_k = order_size_k
         self.bid_fraction = bid_fraction
         self.limit_fraction = limit_fraction
@@ -60,9 +60,9 @@ class RandomMonkey(Agent):
         amount: int = np.random.poisson(self.order_size_k)
         if random.random() < self.bid_fraction: # Buy
             side = Side.BUY
-            priceCents = int(np.random.normal(self.prefered_bid_price, self.bid_price_std))
+            priceCents = int(np.random.normal(self.mean_bid, self.bid_std))
         else: # Sell
-            priceCents = int(np.random.normal(self.prefered_ask_price, self.ask_price_std))
+            priceCents = int(np.random.normal(self.mean_ask, self.ask_std))
             side = Side.SELL
         if random.random() < self.limit_fraction: # Limit
             type = OrderType.LIMIT

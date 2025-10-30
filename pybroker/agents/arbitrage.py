@@ -1,4 +1,4 @@
-from agent import *
+from pybroker.agents.agent import *
 from pybroker.agents.agent import Actions, Observations
 from pybroker.models import *
 from random import shuffle
@@ -15,6 +15,9 @@ class Arbitrage(Agent):
     def policy(self, observations: Observations) -> Actions:     
         # "Trust me, this is my account"
         traderId = observations.account.traderId
+
+        if( observations.highest_bid_cents is None or observations.lowest_ask_cents is None):
+            return super().policy(observations)
         
         if observations.highest_bid_cents > observations.lowest_ask_cents:
             orders: list[Order] = [
