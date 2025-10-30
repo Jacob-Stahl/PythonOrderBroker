@@ -14,7 +14,7 @@ sys.path.insert(0, str(src_path))
 
 # Import modules for testing - do this after path modification
 try:
-    from src.order_matching import Matcher, Order, Side, OrderType, Match
+    from pybroker.order_matching import Matcher, Order, Side, OrderType, Match
 except ImportError as e:
     print(f"Import error: {e}")
     print(f"Python path: {sys.path}")

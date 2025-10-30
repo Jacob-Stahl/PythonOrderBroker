@@ -2,8 +2,8 @@
 
 from dataclasses import dataclass, field
 from enum import Enum
-from src.models import Order, OrderType, Match, Side, Account
-from src.order_broker import Broker
+from pybroker.models import Order, OrderType, Match, Side, Account
+from pybroker.order_broker import Broker
 from typing import Union
 from copy import deepcopy
 import numpy as np

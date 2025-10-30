@@ -1,8 +1,8 @@
 import pytest
-from src.order_broker import Broker
-from src.models import Order, Side, OrderType
+from pybroker.order_broker import Broker
+from pybroker.models import Order, Side, OrderType
 
-from src.broker_vis import depth_chart
+from pybroker.broker_vis import depth_chart
 
 
 def test_open_account():

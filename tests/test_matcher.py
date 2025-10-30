@@ -2,9 +2,9 @@
 Test the order matcher functionality and verify imports work correctly.
 """
 import pytest
-from src.order_matching import Matcher, pl_row_to_order
+from pybroker.order_matching import Matcher, pl_row_to_order
 import polars as pl
-from src.models import Order, Side, OrderType
+from pybroker.models import Order, Side, OrderType
 
 
 class TestMatcher:

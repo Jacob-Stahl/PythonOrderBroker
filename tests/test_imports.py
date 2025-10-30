@@ -2,8 +2,8 @@
 Basic import verification tests - these should all pass if the imports work correctly.
 """
 import pytest
-from src.order_matching import Matcher, pl_row_to_order
-from src.models import Order, Side, OrderType, Match
+from pybroker.order_matching import Matcher, pl_row_to_order
+from pybroker.models import Order, Side, OrderType, Match
 import polars as pl
 
 
