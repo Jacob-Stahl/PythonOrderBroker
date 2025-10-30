@@ -7,6 +7,7 @@ from copy import deepcopy
 import polars as pl
 from pybroker.broker_logging import logger, l1_logger
 
+# TODO add single dataclass to encapsulate latest market data. a single method should generate it
 # TODO API should be FIX compliant https://www.fixtrading.org/implementation-guide/
 # TODO gRPC API?
 
