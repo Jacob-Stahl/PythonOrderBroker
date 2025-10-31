@@ -4,7 +4,7 @@ from typing import Union
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 import polars as pl
-from pybroker.models import Order, OrderType, Match, Side
+from pybroker.models import Order, OrderType, Match, Side, Level1MarketData
 from pybroker.broker_logging import logger
 from copy import deepcopy
 import sys
@@ -39,6 +39,15 @@ class Matcher():
         self._bids: pl.DataFrame = pl.DataFrame(schema=schema).with_row_index()
         self._asks: pl.DataFrame = pl.DataFrame(schema=schema).with_row_index()
         self._matches: list[Match] = []
+
+        self._tick_counter: int = 0
+
+
+        # buffered level 1 market data
+        self.moving_average_5: Union[float, None] = None
+        self.moving_average_10: Union[float, None] = None
+        self.moving_average_50: Union[float, None] = None
+        self.moving_average_100: Union[float, None] = None
 
     def get_lowest_ask(self) -> int:
         if self._asks.height > 0:
@@ -215,6 +224,8 @@ class Matcher():
         if match.fulfils_market_order():
             logger.info(f"Matched market order {asdict(marketOrder)} with limit orders {[asdict(o) for o in match.limitOrders]}")
             self._matches.append(match)
+            self._tick_counter += 1
+            self._update_moving_averages(marketOrder.priceCents)
             return True
         else:
             logger.info(f"Failed to fully match market order {asdict(marketOrder)}. Rolling back.")
@@ -238,3 +249,38 @@ class Matcher():
         self._asks = self._asks.slice(0,0)
         self._bids = self._bids.slice(0,0)
         self._matches = []
+
+    def get_level_1_market_data(self) -> Level1MarketData:
+        """Returns the current Level 1 Market Data for this matcher"""
+        
+        best_bid = self.get_highest_bid() if self._bids.height > 0 else None
+        best_ask = self.get_lowest_ask() if self._asks.height > 0 else None
+     
+        return Level1MarketData(
+            best_bid=best_bid,
+            best_ask=best_ask,
+            moving_average_5=self.moving_average_5,
+            moving_average_10=self.moving_average_10,
+            moving_average_50=self.moving_average_50,
+            moving_average_100=self.moving_average_100,
+        )
+    
+
+    def _update_moving_averages(self, new_price: int):
+        """Update buffered moving averages with the new price"""
+        window_sizes = [5, 10, 50, 100]
+        ma_attrs = [
+            'moving_average_{}'.format(window_size) for window_size in window_sizes
+        ]
+
+        for window_size, ma_attr in zip(window_sizes, ma_attrs):
+            current_ma = getattr(self, ma_attr)
+            if current_ma is None:
+                # first entry
+                setattr(self, ma_attr, new_price)
+            else:
+                n = min(self._tick_counter, window_size)
+                updated_ma = (current_ma * n + new_price) / (n + 1)
+                setattr(self, ma_attr, updated_ma)
+        
+

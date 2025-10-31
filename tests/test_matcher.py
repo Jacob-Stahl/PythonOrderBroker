@@ -253,6 +253,40 @@ class TestMatcher:
         remaining_ask = matcher._asks.row(0, named=True)
         assert remaining_ask['traderId'] == sample_sell_order.traderId
 
+    def test_update_moving_averages(self):
+        matcher = Matcher()
+
+        matcher._tick_counter = 1
+        matcher._update_moving_averages(100)
+        assert matcher.moving_average_5 == pytest.approx(100)
+        assert matcher.moving_average_10 == pytest.approx(100)
+        assert matcher.moving_average_50 == pytest.approx(100)
+        assert matcher.moving_average_100 == pytest.approx(100)
+
+        matcher._tick_counter = 2
+        matcher._update_moving_averages(200)
+        expected_second = (100 * 2 + 200) / 3
+        assert matcher.moving_average_5 == pytest.approx(expected_second)
+        assert matcher.moving_average_10 == pytest.approx(expected_second)
+        assert matcher.moving_average_50 == pytest.approx(expected_second)
+        assert matcher.moving_average_100 == pytest.approx(expected_second)
+
+        # now add 8 more prices to exceed 10 ticks. moving average 5 should only consider last 5 prices
+        prices = [300, 400, 500, 600, 700, 800, 900, 1000]
+        for i, price in enumerate(prices):
+            matcher._tick_counter = 3 + i
+            matcher._update_moving_averages(price)
+
+        expected_ma5 = sum(prices[-5:]) / 5
+        expected_ma10 = (100 + 200 + sum(prices)) / 10
+        expected_ma50 = (100 + 200 + sum(prices)) / 50
+        expected_ma100 = (100 + 200 + sum(prices)) / 100
+
+        assert matcher.moving_average_5 == pytest.approx(expected_ma5)
+        assert matcher.moving_average_10 == pytest.approx(expected_ma10)
+        assert matcher.moving_average_50 == pytest.approx(expected_ma50)
+        assert matcher.moving_average_100 == pytest.approx(expected_ma100)
+
 class TestOrderConversion:
     """Test the pl_row_to_order function."""
     
