@@ -35,9 +35,11 @@ class RandomTrendFollower(Agent):
     def policy(self, observations: Observations) -> Actions:
         traderId = observations.account.traderId
 
-
         price_mean = observations.moving_average_100
         price_std = observations.standard_deviation_100
+
+        if( price_mean is None or price_std is None):
+            return super().policy(observations)
         
          # construct order
         side: Side
@@ -46,16 +48,10 @@ class RandomTrendFollower(Agent):
         amount: int = np.random.poisson(self.order_size_k)
         if random.random() < self.bid_fraction: # Buy
             side = Side.BUY
-            if price_mean is not None:
-                priceCents = int(np.random.normal(price_mean, 2))
-            else:
-                priceCents = int(np.random.normal(320, 4))
+            priceCents = int(np.random.normal(price_mean, price_std))
         else: # Sell
             side = Side.SELL
-            if price_mean is not None:
-                priceCents = int(np.random.normal(price_mean, 2))
-            else:
-                priceCents = int(np.random.normal(320, 4))
+            priceCents = int(np.random.normal(price_mean, price_std))
         if random.random() < self.limit_fraction: # Limit
             type = OrderType.LIMIT
         else: # Market
