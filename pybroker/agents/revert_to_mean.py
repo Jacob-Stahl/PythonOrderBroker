@@ -16,8 +16,8 @@ class RevertToMean(Agent):
     def policy(self, observations: Observations) -> Actions:
         traderId = observations.account.traderId
 
-        mean = observations.moving_average_100
-        std = observations.standard_deviation_100
+        mean = observations.level_1_data.moving_average_100
+        std = observations.level_1_data.standard_deviation_100
 
         if( mean is None or std is None):
             return super().policy(observations)

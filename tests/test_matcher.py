@@ -287,6 +287,33 @@ class TestMatcher:
         assert matcher.moving_average_50 == pytest.approx(expected_ma50)
         assert matcher.moving_average_100 == pytest.approx(expected_ma100)
 
+    def test_update_standard_deviations(self):
+        matcher = Matcher()
+
+        prices = [100, 200, 300, 400, 500]
+        for i, price in enumerate(prices):
+            matcher._tick_counter = 1 + i
+            matcher._update_moving_averages(price)
+
+        mean_5 = sum(prices) / 5
+        variance_5 = sum((x - mean_5) ** 2 for x in prices) / 5
+        expected_std_5 = variance_5 ** 0.5
+
+        assert matcher.standard_deviation_5 == pytest.approx(expected_std_5)
+
+        # Add more prices to exceed 10 ticks
+        more_prices = [600, 700, 800, 900, 1000, 1100]
+        for i, price in enumerate(more_prices):
+            matcher._tick_counter = 6 + i
+            matcher._update_moving_averages(price)
+
+        last_5_prices = more_prices[-5:]
+        mean_last_5 = sum(last_5_prices) / 5
+        variance_last_5 = sum((x - mean_last_5) ** 2 for x in last_5_prices) / 5
+        expected_std_last_5 = variance_last_5 ** 0.5
+
+        assert matcher.standard_deviation_5 == pytest.approx(expected_std_last_5)
+
 
 class TestOrderConversion:
     """Test the pl_row_to_order function."""

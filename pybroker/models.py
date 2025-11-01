@@ -88,18 +88,16 @@ class Account:
 @dataclass
 class Level1MarketData:
     best_bid: Union[int, None] = None
-    best_bid_size: Union[int, None] = None
     best_ask: Union[int, None] = None
-    best_ask_size: Union[int, None] = None
 
     # Statistics over N ticks
     moving_average_5: Union[float, None] = None
-    std_deviation_5: Union[float, None] = None
+    standard_deviation_5: Union[float, None] = None
     moving_average_10: Union[float, None] = None
-    std_deviation_10: Union[float, None] = None
+    standard_deviation_10: Union[float, None] = None
     moving_average_50: Union[float, None] = None
-    std_deviation_50: Union[float, None] = None
+    standard_deviation_50: Union[float, None] = None
     moving_average_100: Union[float, None] = None
-    std_deviation_100: Union[float, None] = None
+    standard_deviation_100: Union[float, None] = None
 
     

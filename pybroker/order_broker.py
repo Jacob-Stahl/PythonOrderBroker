@@ -329,3 +329,7 @@ class Broker:
     def total_cash_held_in_bid_limits(self, asset: str) -> int:
         assert asset in self.markets.keys(), f"Market for asset '{asset}' does not exist"
         return self.markets[asset].total_cash_held_in_bid_limits()
+    
+    def get_level_1_market_data(self, asset: str) -> Level1MarketData:
+        assert asset in self.markets.keys(), f"Market for asset '{asset}' does not exist"
+        return self.markets[asset].get_level_1_market_data()

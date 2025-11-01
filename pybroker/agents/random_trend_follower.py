@@ -35,11 +35,12 @@ class RandomTrendFollower(Agent):
     def policy(self, observations: Observations) -> Actions:
         traderId = observations.account.traderId
 
-        price_mean = observations.moving_average_100
-        price_std = observations.standard_deviation_100
+        price_mean = observations.level_1_data.moving_average_100
+        price_std = observations.level_1_data.standard_deviation_100
 
         if( price_mean is None or price_std is None):
             return super().policy(observations)
+        
         
          # construct order
         side: Side

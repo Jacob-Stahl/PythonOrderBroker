@@ -16,10 +16,10 @@ class Arbitrage(Agent):
         # "Trust me, this is my account"
         traderId = observations.account.traderId
 
-        if( observations.highest_bid_cents is None or observations.lowest_ask_cents is None):
+        if( observations.level_1_data.best_bid is None or observations.level_1_data.best_ask is None):
             return super().policy(observations)
-        
-        if observations.highest_bid_cents > observations.lowest_ask_cents:
+
+        if observations.level_1_data.best_bid > observations.level_1_data.best_ask:
             orders: list[Order] = [
                 Order(
                     traderId=traderId,

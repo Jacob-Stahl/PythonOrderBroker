@@ -1,5 +1,6 @@
 # https://medium.com/@kshitij2549/python-grpc-walkthrough-fd192009a1c6
 
+import math
 from typing import Union
 from dataclasses import dataclass, field, asdict
 from enum import Enum
@@ -43,7 +44,7 @@ class Matcher():
         self._tick_counter: int = 0
 
 
-        # Moving averages
+        # Level 1 Stats
         self.max_buffer_size: int = 100
         self.circular_price_buffer: list[int] = []
 
@@ -51,6 +52,12 @@ class Matcher():
         self.moving_average_10: Union[float, None] = None
         self.moving_average_50: Union[float, None] = None
         self.moving_average_100: Union[float, None] = None
+
+        self.standard_deviation_5: Union[float, None] = None
+        self.standard_deviation_10: Union[float, None] = None
+        self.standard_deviation_50: Union[float, None] = None
+        self.standard_deviation_100: Union[float, None] = None
+
 
     def get_lowest_ask(self) -> int:
         if self._asks.height > 0:
@@ -123,6 +130,9 @@ class Matcher():
         else:
             self._asks = pl.concat([self._asks, new_row])
             self._sort_asks()
+
+        self._update_moving_averages(limitOrder.priceCents)
+        self._tick_counter += 1
 
     def match_market_order(self, marketOrder: Order, 
                            availableCash: int = sys.maxsize,
@@ -262,21 +272,24 @@ class Matcher():
         return Level1MarketData(
             best_bid=best_bid,
             best_ask=best_ask,
+
+            # Buffered moving averages and standard deviations
             moving_average_5=self.moving_average_5,
             moving_average_10=self.moving_average_10,
             moving_average_50=self.moving_average_50,
             moving_average_100=self.moving_average_100,
+
+            standard_deviation_5=self.standard_deviation_5,
+            standard_deviation_10=self.standard_deviation_10,
+            standard_deviation_50=self.standard_deviation_50,
+            standard_deviation_100=self.standard_deviation_100,
         )
     
 
     def _update_moving_averages(self, new_price: int):
         """Update buffered moving averages with the new price"""
 
-        # Not safe, but convenient
         window_sizes = [5, 10, 50, 100]
-        ma_attrs = [
-            'moving_average_{}'.format(window_size) for window_size in window_sizes
-        ]
 
         # Update circular buffer
         if len(self.circular_price_buffer) < self.max_buffer_size:
@@ -285,12 +298,18 @@ class Matcher():
             index = self._tick_counter % self.max_buffer_size
             self.circular_price_buffer[index] = new_price
 
-        # Calculate moving averages
-        for ideal_window_size, ma_attr in zip(window_sizes, ma_attrs):
+        # Calculate moving averages and standard deviations
+        for ideal_window_size in window_sizes:
             window_size = min(ideal_window_size, len(self.circular_price_buffer))
             if window_size > 0:
                 relevant_prices = self.circular_price_buffer[-window_size:]
                 moving_average = sum(relevant_prices) / window_size
-                setattr(self, ma_attr, moving_average)
+                standard_deviation = (sum((x - moving_average) ** 2 for x in relevant_prices) / window_size) ** 0.5           
+                if(math.isnan(standard_deviation)):
+                    standard_deviation = 0.0
+                
+                setattr(self, f"moving_average_{ideal_window_size}", moving_average)
+                setattr(self, f"standard_deviation_{ideal_window_size}", standard_deviation)
             else:
-                setattr(self, ma_attr, None)
+                setattr(self, f"moving_average_{ideal_window_size}", None)
+                setattr(self, f"standard_deviation_{ideal_window_size}", None)
