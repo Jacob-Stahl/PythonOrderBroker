@@ -43,7 +43,10 @@ class Matcher():
         self._tick_counter: int = 0
 
 
-        # buffered level 1 market data
+        # Moving averages
+        self.max_buffer_size: int = 100
+        self.circular_price_buffer: list[int] = []
+
         self.moving_average_5: Union[float, None] = None
         self.moving_average_10: Union[float, None] = None
         self.moving_average_50: Union[float, None] = None
@@ -268,19 +271,26 @@ class Matcher():
 
     def _update_moving_averages(self, new_price: int):
         """Update buffered moving averages with the new price"""
+
+        # Not safe, but convenient
         window_sizes = [5, 10, 50, 100]
         ma_attrs = [
             'moving_average_{}'.format(window_size) for window_size in window_sizes
         ]
 
-        for window_size, ma_attr in zip(window_sizes, ma_attrs):
-            current_ma = getattr(self, ma_attr)
-            if current_ma is None:
-                # first entry
-                setattr(self, ma_attr, new_price)
-            else:
-                n = min(self._tick_counter, window_size)
-                updated_ma = (current_ma * n + new_price) / (n + 1)
-                setattr(self, ma_attr, updated_ma)
-        
+        # Update circular buffer
+        if len(self.circular_price_buffer) < self.max_buffer_size:
+            self.circular_price_buffer.append(new_price)
+        else:
+            index = self._tick_counter % self.max_buffer_size
+            self.circular_price_buffer[index] = new_price
 
+        # Calculate moving averages
+        for ideal_window_size, ma_attr in zip(window_sizes, ma_attrs):
+            window_size = min(ideal_window_size, len(self.circular_price_buffer))
+            if window_size > 0:
+                relevant_prices = self.circular_price_buffer[-window_size:]
+                moving_average = sum(relevant_prices) / window_size
+                setattr(self, ma_attr, moving_average)
+            else:
+                setattr(self, ma_attr, None)

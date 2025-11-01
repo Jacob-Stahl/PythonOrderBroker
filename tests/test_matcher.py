@@ -265,7 +265,7 @@ class TestMatcher:
 
         matcher._tick_counter = 2
         matcher._update_moving_averages(200)
-        expected_second = (100 * 2 + 200) / 3
+        expected_second = 150.0  # (100 + 200) / 2
         assert matcher.moving_average_5 == pytest.approx(expected_second)
         assert matcher.moving_average_10 == pytest.approx(expected_second)
         assert matcher.moving_average_50 == pytest.approx(expected_second)
@@ -279,13 +279,14 @@ class TestMatcher:
 
         expected_ma5 = sum(prices[-5:]) / 5
         expected_ma10 = (100 + 200 + sum(prices)) / 10
-        expected_ma50 = (100 + 200 + sum(prices)) / 50
-        expected_ma100 = (100 + 200 + sum(prices)) / 100
+        expected_ma50 = (100 + 200 + sum(prices)) / min(10, 50)  # only 10 prices total so far
+        expected_ma100 = (100 + 200 + sum(prices)) / min(10, 100)  # only 10 prices total so far
 
         assert matcher.moving_average_5 == pytest.approx(expected_ma5)
         assert matcher.moving_average_10 == pytest.approx(expected_ma10)
         assert matcher.moving_average_50 == pytest.approx(expected_ma50)
         assert matcher.moving_average_100 == pytest.approx(expected_ma100)
+
 
 class TestOrderConversion:
     """Test the pl_row_to_order function."""
