@@ -62,6 +62,7 @@ class FeedForwardNeuralNetwork(Agent):
                 orders=[]
             )
 
+        # Choose side and order type
         side:Side = Side.BUY if output_vector[1] > 0.5 else Side.SELL
         type:OrderType = OrderType.LIMIT if output_vector[2] > 0.5 else OrderType.MARKET
 
@@ -70,7 +71,9 @@ class FeedForwardNeuralNetwork(Agent):
             trade_price: int = int(output_vector[3] * 2 * mean_price)
         else:
             trade_price: int = 0
-        amount: int = int(math.exp(output_vector[4] * 2))
+        
+        # Place at least 1 order
+        amount: int = max(1, int(math.exp(output_vector[4] * 2)))
 
         # Place a single order
         return Actions(
