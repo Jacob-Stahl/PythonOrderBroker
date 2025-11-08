@@ -32,6 +32,7 @@ class AgentBreeder():
         self.agents: dict[int, Agent] = {}
         self.family_tree = nx.DiGraph()
         self._new_traderId = max(traderIds) + 1
+        self._tradable_assets: set[str] = set(broker_asset_balances.keys())
 
         # internal cash/asset pool
         self.cash_balance_cents: int = breeder_cash_balance
@@ -40,6 +41,43 @@ class AgentBreeder():
         # initialize the living agents pool
         for traderId in traderIds:
             self._life(traderId, broker, fresh_agent=True)
+
+    def step(self, broker:Broker) -> None:
+        """Perform a single breeding step"""
+
+        # Traders take actions in a random order each step
+        traderIds = list(self.agents.keys())
+        random.shuffle(traderIds)
+        for traderId in traderIds:
+            for asset in self._tradable_assets:
+                agent = self.agents[traderId]
+                observations = observe(broker, traderId, asset)
+                actions = agent.policy(observations)
+                for order in actions.orders:
+                    try:
+                        broker.place_order(asset, order)
+                    except:
+                        pass  # Order failed, skip
+
+        # Apply evolutionary pressure and cull unfit agents
+        num_agents_killed:int = 0
+        traderIds = list(self.agents.keys())
+        for traderId in traderIds:
+            # Apply evolutionary pressure
+            account = broker.get_account_info(traderId)
+            pressure_applied = self._apply_pressure(traderId, broker)
+
+            # Cull unfit agents
+            if self._should_kill(account) or not pressure_applied:
+                self._death(traderId, broker)
+                del self.agents[traderId]
+                logger.debug(f"Culled agent with traderId {traderId}")
+                num_agents_killed += 1
+
+        # Reproduce to maintain population size
+        for _ in range(num_agents_killed):
+            new_traderId = self._generate_new_traderId()
+            self._life(new_traderId, broker)
 
     def _generate_new_traderId(self) -> int:
         new_id = self._new_traderId
@@ -123,15 +161,20 @@ class AgentBreeder():
             self.family_tree.add_node(childId)
             logger.debug(f"Added root node {childId} in family tree")
 
-    def _apply_pressure(self, traderId: int, broker:Broker) -> None:
-        withdrawn_cash = 100
-        
+    def _apply_pressure(self, traderId: int, broker:Broker) -> bool:
+        """
+        Apply evolutionary pressure by withdrawing cash from the agent's underlying account.   
+        Returns True if pressure was applied successfully, False otherwise.
+        """
+
+        withdrawn_cash = 10 # TODO make this configurable
         try:
             broker.withdraw_cash(traderId, withdrawn_cash)
         except:
-            return
+            return False  # Unable to withdraw cash, skip applying pressure
         
         self.cash_balance_cents = withdrawn_cash 
+        return True
 
     @staticmethod
     def _should_kill(account: Account) -> bool:
