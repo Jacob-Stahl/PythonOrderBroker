@@ -8,8 +8,7 @@ from pybroker.broker_logging import logger
 import random
 import math
 import numpy as np
-
-from typing import ClassVar
+import networkx as nx
 
 class AgentBreeder():
 
@@ -28,8 +27,11 @@ class AgentBreeder():
                  broker_asset_balances: dict[str, int] = {}
                  ) -> None:
 
-        self.pool_size = len(traderIds)
+        self.agent_cls: type = agent_cls
+        self.desired_pool_size = len(traderIds)
         self.agents: dict[int, Agent] = {}
+        self.family_tree = nx.DiGraph()
+        self._new_traderId = max(traderIds) + 1
 
         # internal cash/asset pool
         self.cash_balance_cents: int = breeder_cash_balance
@@ -39,29 +41,32 @@ class AgentBreeder():
         for traderId in traderIds:
             self._life(traderId, broker, fresh_agent=True)
 
+    def _generate_new_traderId(self) -> int:
+        new_id = self._new_traderId
+        self._new_traderId += 1
+        return new_id
+
     def _determine_starting_cash(self) -> int:
         """Determine how much cash each new agent should start with"""
-        if self.pool_size == 0:
+        if self.desired_pool_size == 0:
             return 0
-        return self.cash_balance_cents // self.pool_size
+        return self.cash_balance_cents // self.desired_pool_size
     
     def _determine_starting_assets(self, asset:str) -> int:
         """Determine how much of each asset each new agent should start with"""
-        if self.pool_size == 0:
+        if self.desired_pool_size == 0:
             return 0
         if asset not in self.asset_balances.keys():
             return 0
-        return self.asset_balances[asset] // self.pool_size
+        return self.asset_balances[asset] // self.desired_pool_size
 
-    def _select_parent(self) -> Agent:
+    def _select_parent_id(self) -> int:
         """
         Select a random parent to reproduce
         This is intended to be called after all unfit agents are culled
         """
 
-        parentId = random.choice(list(self.agents.keys()))
-        logger.debug(f"Selected parent agent {parentId} for reproduction")
-        return self.agents[parentId]
+        return random.choice(list(self.agents.keys()))
 
     def _life(self, traderId:int, broker:Broker, fresh_agent:bool = False) -> None:
         """
@@ -70,13 +75,13 @@ class AgentBreeder():
 
         assert traderId not in self.agents.keys(), "TraderId already exists in living agents pool"
 
+        parentId:Union[int, None] = None
         if not fresh_agent:
-            parent = self._select_parent()
-            child = parent.mutate()
+            parentId = self._select_parent_id()
+            child = self.agents[parentId].mutate()
             self.agents[traderId] = child
         else:
-            agent_cls = type(next(iter(self.agents.values())))
-            spontanious_generation = agent_cls()
+            spontanious_generation = self.agent_cls()
             self.agents[traderId] = spontanious_generation
         
         logger.debug(f"Created new agent for traderId {traderId} by mutating parent agent")
@@ -86,22 +91,19 @@ class AgentBreeder():
 
         # fund the new account from the breeder's internal pool
         starting_cash = self._determine_starting_cash()
-        if starting_cash > 0:
-            broker.deposit_cash(traderId, starting_cash)
-            self.cash_balance_cents -= starting_cash
-            logger.debug(f"Deposited {starting_cash} cents into new agent account {traderId}")
-        else:
-            logger.debug(f"No cash available to deposit into new agent account {traderId}")
+        broker.deposit_cash(traderId, starting_cash)
+        self.cash_balance_cents -= starting_cash
+        logger.debug(f"Deposited {starting_cash} cents into new agent account {traderId}")
 
         # fund the new account with assets from the breeder's internal pool
         for asset in self.asset_balances.keys():
             starting_asset_amount = self._determine_starting_assets(asset)
-            if starting_asset_amount > 0:
-                broker.deposit_asset(traderId, starting_asset_amount, asset)
-                self.asset_balances[asset] -= starting_asset_amount
-                logger.debug(f"Deposited {starting_asset_amount} of asset {asset} into new agent account {traderId}")
-            else:
-                logger.debug(f"No {asset} available to deposit into new agent account {traderId}")
+            broker.deposit_asset(traderId, starting_asset_amount, asset)
+            self.asset_balances[asset] -= starting_asset_amount
+            logger.debug(f"Deposited {starting_asset_amount} of asset {asset} into new agent account {traderId}")
+
+        # update the family tree
+        self._add_to_family_tree(parentId, traderId)
 
     def _death(self, traderId:int, broker:Broker) -> None:
         """Cull the weak"""
@@ -112,6 +114,14 @@ class AgentBreeder():
             if asset not in self.asset_balances.keys():
                 self.asset_balances[asset] = 0
             self.asset_balances[asset] += account.portfolio[asset]
+
+    def _add_to_family_tree(self, parentId:Union[int, None], childId:int) -> None:
+        if parentId is not None:
+            self.family_tree.add_edge(parentId, childId)
+            logger.debug(f"Added edge from {parentId} to {childId} in family tree")
+        else:
+            self.family_tree.add_node(childId)
+            logger.debug(f"Added root node {childId} in family tree")
 
     def _apply_pressure(self, traderId: int, broker:Broker) -> None:
         withdrawn_cash = 100
