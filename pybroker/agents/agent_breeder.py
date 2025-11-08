@@ -24,7 +24,7 @@ class AgentBreeder():
                  broker: Broker,
 
                  breeder_cash_balance: int = 0,
-                 broker_asset_balances: dict[str, int] = {}
+                 breeder_asset_balances: dict[str, int] = {}
                  ) -> None:
 
         self.agent_cls: type = agent_cls
@@ -32,11 +32,11 @@ class AgentBreeder():
         self.agents: dict[int, Agent] = {}
         self.family_tree = nx.DiGraph()
         self._new_traderId = max(traderIds) + 1
-        self._tradable_assets: set[str] = set(broker_asset_balances.keys())
+        self._tradable_assets: set[str] = set(breeder_asset_balances.keys())
 
         # internal cash/asset pool
         self.cash_balance_cents: int = breeder_cash_balance
-        self.asset_balances: dict[str, int] = broker_asset_balances
+        self.asset_balances: dict[str, int] = breeder_asset_balances
 
         # initialize the living agents pool
         for traderId in traderIds:
@@ -98,13 +98,11 @@ class AgentBreeder():
             return 0
         return self.asset_balances[asset] // self.desired_pool_size
 
-    def _select_parent_id(self) -> int:
+    def _select_parent_id(self, accounts: list[Account]) -> int:
         """
-        Select a random parent to reproduce
-        This is intended to be called after all unfit agents are culled
+        Select a parent agent from the living at random
         """
-
-        return random.choice(list(self.agents.keys()))
+        return random.choice(accounts).traderId
 
     def _life(self, traderId:int, broker:Broker, fresh_agent:bool = False) -> None:
         """
@@ -113,9 +111,10 @@ class AgentBreeder():
 
         assert traderId not in self.agents.keys(), "TraderId already exists in living agents pool"
 
+        all_accounts: list[Account] = [broker.get_account_info(acct) for acct in self.agents.keys()]
         parentId:Union[int, None] = None
         if not fresh_agent:
-            parentId = self._select_parent_id()
+            parentId = self._select_parent_id(all_accounts)
             child = self.agents[parentId].mutate()
             self.agents[traderId] = child
         else:
@@ -167,19 +166,19 @@ class AgentBreeder():
         Returns True if pressure was applied successfully, False otherwise.
         """
 
-        withdrawn_cash = 10 # TODO make this configurable
+        withdrawn_cash = 25 # TODO make this configurable
         try:
             broker.withdraw_cash(traderId, withdrawn_cash)
         except:
             return False  # Unable to withdraw cash, skip applying pressure
         
-        self.cash_balance_cents = withdrawn_cash 
+        self.cash_balance_cents += withdrawn_cash
         return True
 
     @staticmethod
     def _should_kill(account: Account) -> bool:
-        """kill if tradable balance is less than 1000"""
-        return account.tradable_balance_cents() < 1000
+        """kill if tradable balance is less than a threshold"""
+        return account.tradable_balance_cents() <  500 # TODO make this configurable
     
 
     

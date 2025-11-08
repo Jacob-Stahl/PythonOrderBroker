@@ -440,7 +440,7 @@ def test_l1_history_is_recorded_correctly_for_a_single_asset():
     # place limit orders and check L1 history
     limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, timestamp=1)
     broker.place_order(asset, limit_order1)
-    l1_hist = broker.l1_hist[asset]
+    l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 1
     assert l1_hist[0, "best_bid"] == 100
     assert l1_hist[0, "best_ask"] == None
@@ -448,7 +448,7 @@ def test_l1_history_is_recorded_correctly_for_a_single_asset():
 
     limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=3, timestamp=2)
     broker.place_order(asset, limit_order2)
-    l1_hist = broker.l1_hist[asset]
+    l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 2
     assert l1_hist[1, "best_bid"] == 100
     assert l1_hist[1, "best_ask"] == 150
@@ -457,7 +457,7 @@ def test_l1_history_is_recorded_correctly_for_a_single_asset():
     # place a slightly better bid limit
     limit_order3 = Order(id=3, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=120, amount=2, timestamp=3)
     broker.place_order(asset, limit_order3)
-    l1_hist = broker.l1_hist[asset]
+    l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 3
     assert l1_hist[2, "best_bid"] == 120
     assert l1_hist[2, "best_ask"] == 150
@@ -466,7 +466,7 @@ def test_l1_history_is_recorded_correctly_for_a_single_asset():
     # place a better ask limit
     limit_order4 = Order(id=4, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=130, amount=4, timestamp=4)
     broker.place_order(asset, limit_order4)
-    l1_hist = broker.l1_hist[asset]
+    l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 4
     assert l1_hist[3, "best_bid"] == 120
     assert l1_hist[3, "best_ask"] == 130
@@ -476,7 +476,7 @@ def test_l1_history_is_recorded_correctly_for_a_single_asset():
     # try to place a market buy that can be fully matched
     market_order1 = Order(id=5, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=4, timestamp=5)
     broker.place_order(asset, market_order1)
-    l1_hist = broker.l1_hist[asset]
+    l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 5
     assert l1_hist[4, "best_bid"] == 120
     assert l1_hist[4, "best_ask"] == 150
@@ -485,7 +485,7 @@ def test_l1_history_is_recorded_correctly_for_a_single_asset():
     # try to place a market sell that can be fully matched
     market_order2 = Order(id=6, traderId=1, side=Side.SELL, type=OrderType.MARKET, amount=3, timestamp=6)
     broker.place_order(asset, market_order2)
-    l1_hist = broker.l1_hist[asset]
+    l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 6
     assert l1_hist[5, "best_bid"] == 100
     assert l1_hist[5, "best_ask"] == 150
@@ -494,7 +494,7 @@ def test_l1_history_is_recorded_correctly_for_a_single_asset():
     # A failed order should not update L1 history
     market_order3 = Order(id=7, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=1000, timestamp=7)
     broker.place_order(asset, market_order3)
-    l1_hist = broker.l1_hist[asset]
+    l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 6  # no change
     assert l1_hist[5, "best_bid"] == 100
     assert l1_hist[5, "best_ask"] == 150
@@ -527,13 +527,13 @@ def test_l1_history_is_recorded_correctly_for_multiple_assets():
         broker.place_order("BBB", order)
 
     # check L1 history for AAA
-    l1_hist_AAA = broker.l1_hist["AAA"]
+    l1_hist_AAA = broker.get_l1_history("AAA")
     assert l1_hist_AAA.height == 2
     assert l1_hist_AAA[1, "best_bid"] == 100
     assert l1_hist_AAA[1, "best_ask"] == 150    
 
     # check L1 history for BBB
-    l1_hist_BBB = broker.l1_hist["BBB"]
+    l1_hist_BBB = broker.get_l1_history("BBB")
     assert l1_hist_BBB.height == 2
     assert l1_hist_BBB[1, "best_bid"] == 200
     assert l1_hist_BBB[1, "best_ask"] == 250

@@ -25,6 +25,7 @@ class FeedForwardNeuralNetwork(Agent):
         # Define the layers of the neural network
         self.layers: list[Layer] = [
             Layer(input_size=self._input_vector_size, output_size=8, activation='relu'),
+            Layer(input_size=8, output_size=8, activation='relu'),
             Layer(input_size=8, output_size=self._output_vector_size, activation='sigmoid')
         ]
 
@@ -63,12 +64,16 @@ class FeedForwardNeuralNetwork(Agent):
             )
 
         # Choose side and order type
-        side:Side = Side.BUY if output_vector[1] > 0.5 else Side.SELL
-        type:OrderType = OrderType.LIMIT if output_vector[2] > 0.5 else OrderType.MARKET
+        side:Side = Side.BUY if output_vector[1] < 0.5 else Side.SELL
+        type:OrderType = OrderType.LIMIT if output_vector[2] < 0.5 else OrderType.MARKET
 
         # trade price and order size scale with market data
         if type is OrderType.LIMIT:
-            trade_price: int = int(output_vector[3] * 2 * mean_price)
+            price_multiplier: float = output_vector[3] * 2.0 - 1  # Scale from -1.0 to 1.0
+            price_std = market_data.standard_deviation_10 if market_data.standard_deviation_10 is not None else 1.0
+
+            # Multiplier from agent output is scaled by market volatility
+            trade_price: int = int(mean_price * price_multiplier + np.random.normal(0, price_std))
         else:
             trade_price: int = 0
         
@@ -95,16 +100,18 @@ class FeedForwardNeuralNetwork(Agent):
         return mutated_agent
 
 class Layer:
-    def __init__(self, input_size: int, output_size: int, activation: str = 'relu', mutation_strength: float = 0.1) -> None:
+    def __init__(self, input_size: int, output_size: int, 
+                 activation: str = 'relu', mutation_strength: float = 0.1) -> None:
         self.input_size = input_size
         self.output_size = output_size
         self.activation = activation
-        self.weights = np.random.randn(output_size, input_size) / (input_size * output_size)
+        self.weights = np.random.randn(output_size, input_size)
         self.biases = np.zeros((output_size, 1))
         self.mutation_strength = mutation_strength
     
     def forward(self, input_vector: np.ndarray) -> np.ndarray:
         z = np.dot(self.weights, input_vector) + self.biases
+        z = np.clip(z, -5, 5)  # Clip z for numerical stability
         return self.activate(z)
     
     def activate(self, z: np.ndarray) -> np.ndarray:
@@ -123,7 +130,9 @@ class Layer:
         Returns a new Layer instance with mutated weights and biases.
         """
 
+        new_layer = deepcopy(self)
+
         mutation_strength = np.std(self.weights) * self.mutation_strength
-        self.weights += np.random.randn(*self.weights.shape) * mutation_strength
-        self.biases += np.random.randn(*self.biases.shape) * mutation_strength
-        return self
+        new_layer.weights += np.random.randn(*new_layer.weights.shape) * mutation_strength
+        new_layer.biases += np.random.randn(*new_layer.biases.shape) * mutation_strength
+        return new_layer

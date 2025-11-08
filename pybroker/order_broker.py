@@ -25,6 +25,7 @@ class Broker:
 
         # asset - L1 history DataFrame
         self.l1_hist: dict[str, pl.DataFrame] = {}
+        self.l1_hist_buffer: dict[str, list] = {}
 
     def next_tick(self) -> int:
         self.tick_count += 1
@@ -240,41 +241,38 @@ class Broker:
 
 
     def _init_l1_hist(self, asset: str):
-        if(asset not in self.l1_hist.keys()):
+        if asset not in self.l1_hist.keys():
             self.l1_hist[asset] = pl.DataFrame(
-                schema={
-                    "best_bid" : pl.Int64,
-                    "best_ask" : pl.Int64,
-                    "timestamp" : pl.Int64
-                }
+                schema={"best_bid": pl.Int64, "best_ask": pl.Int64, "timestamp": pl.Int64}
             )
+            self.l1_hist_buffer[asset] = []
 
     def _update_l1_hist(self, asset: str, timestamp: int):
-        
-        # ensure L1 history DataFrame exists
         self._init_l1_hist(asset)
-
-        # Update L1 history DataFrame
-        new_row: pl.DataFrame = pl.DataFrame(
-            {
-                "best_bid" : self.get_highest_bid(asset),
-                "best_ask" : self.get_lowest_ask(asset),
-                "timestamp" : timestamp
-            }
-        )
-        self.l1_hist[asset] = pl.concat([self.l1_hist[asset], new_row])
-        
-        # Push updates to L1 logger
-        l1_log_event = {
-            "asset": asset,
-            "best_bid": new_row[0, "best_bid"],
-            "best_ask": new_row[0, "best_ask"],
-            "timestamp": new_row[0, "timestamp"]
+        new_row = {
+            "best_bid": self.get_highest_bid(asset),
+            "best_ask": self.get_lowest_ask(asset),
+            "timestamp": timestamp
         }
-        l1_logger.info(f"{l1_log_event}")
+        self.l1_hist_buffer[asset].append(new_row)
+        # Only convert to DataFrame every N ticks or on demand
+        if len(self.l1_hist_buffer[asset]) >= 1000:  # Tune this threshold
+            self.l1_hist[asset] = pl.concat([
+                self.l1_hist[asset],
+                pl.DataFrame(self.l1_hist_buffer[asset])
+            ])
+            self.l1_hist_buffer[asset] = []
+        l1_logger.info(f"{new_row}")
 
     def get_l1_history(self, asset: str) -> pl.DataFrame:
         assert asset in self.l1_hist.keys(), f"L1 history for asset '{asset}' does not exist"
+        # Flush buffer before returning
+        if self.l1_hist_buffer[asset]:
+            self.l1_hist[asset] = pl.concat([
+                self.l1_hist[asset],
+                pl.DataFrame(self.l1_hist_buffer[asset])
+            ])
+            self.l1_hist_buffer[asset] = []
         return self.l1_hist[asset].clone()
 
     def _settle_trade(self, match: Match, asset: str) -> None:      
