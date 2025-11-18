@@ -98,14 +98,14 @@ def bid_ask_spread_chart(broker: Broker, asset: str):
     l1_hist: pl.DataFrame = broker.l1_hist[asset]
 
     bid_ask_df = l1_hist.select([
-        pl.col('timestamp'),
+        pl.col('tick'),
         pl.col('best_bid'),
         pl.col('best_ask')
     ]).to_pandas()
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(bid_ask_df['timestamp'], bid_ask_df['best_bid'], label='Best Bid Price', color='green')
-    ax.plot(bid_ask_df['timestamp'], bid_ask_df['best_ask'], label='Best Ask Price', color='red')
+    ax.plot(bid_ask_df['tick'], bid_ask_df['best_bid'], label='Best Bid Price', color='green')
+    ax.plot(bid_ask_df['tick'], bid_ask_df['best_ask'], label='Best Ask Price', color='red')
     ax.set_xlabel('Time')
     ax.set_ylabel('Price (cents)')
     ax.set_title('Best Bid and Ask Prices Over Time')
@@ -117,7 +117,7 @@ def average_bid_ask_spread_over_time(broker: Broker, asset: str):
     l1_hist = broker.l1_hist[asset].select([
         pl.col('best_bid'),
         pl.col('best_ask'),
-        pl.col('timestamp')
+        pl.col('tick')
     ]).to_pandas()
     
     avg_series = l1_hist.apply(
@@ -135,11 +135,11 @@ def average_bid_ask_spread_over_time(broker: Broker, asset: str):
     ma_plot = pd.Series(avg_plot).rolling(window=ma_window, min_periods=1).mean()
 
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.plot(l1_hist["timestamp"], avg_plot, label="Average Bid/Ask")
-    ax.plot(l1_hist["timestamp"], ma_plot,
+    ax.plot(l1_hist["tick"], avg_plot, label="Average Bid/Ask")
+    ax.plot(l1_hist["tick"], ma_plot,
             label=f"{ma_window}-point MA",
             color="red", linestyle="--")
-    ax.set_xlabel("Timestamp")
+    ax.set_xlabel("tick")
     ax.set_ylabel("Price (cents)")
     ax.set_title("Average of Best Bid and Ask Over Time")
     ax.legend()

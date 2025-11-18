@@ -27,7 +27,7 @@ class TestBasicImports:
             type=OrderType.LIMIT,
             priceCents=10000,
             amount=50,
-            timestamp=1000000
+            tick=1000000
         )
         assert order is not None
         assert order.id == 1
@@ -55,7 +55,7 @@ class TestBasicImports:
             side=Side.BUY,
             type=OrderType.MARKET,
             amount=50,
-            timestamp=1000000
+            tick=1000000
         )
         match = Match(marketOrder=order)
         assert match is not None
@@ -103,7 +103,7 @@ class TestBasicFunctionality:
             type=OrderType.LIMIT,  # Using imported enum
             priceCents=10000,
             amount=50,
-            timestamp=1000000
+            tick=1000000
         )
         
         sell_order = Order(
@@ -112,7 +112,7 @@ class TestBasicFunctionality:
             side=Side.SELL,  # Using imported enum
             type=OrderType.MARKET,  # Using imported enum
             amount=30,
-            timestamp=1000001
+            tick=1000001
         )
         
         assert buy_order.side == Side.BUY

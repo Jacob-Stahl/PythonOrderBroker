@@ -150,11 +150,11 @@ class Broker:
                     asset: str, 
                     order: Order) -> bool:
         
-        order.timestamp = self.next_tick()
+        order.tick = self.next_tick()
         logger.info(f"Placing order {asdict(order)}")
 
         try:
-            assert order.timestamp >= 0
+            assert order.tick >= 0
             assert asset in self.markets.keys()
             assert order.traderId in self.accounts.keys()
             assert order.amount >= 0 
@@ -203,7 +203,7 @@ class Broker:
 
         if isSuccessful:
             # update l1 hist
-            self._update_l1_hist(asset, order.timestamp)
+            self._update_l1_hist(asset, order.tick)
 
         logger.info(f"Order placed sucessfully {asdict(order)}")
 
@@ -243,16 +243,16 @@ class Broker:
     def _init_l1_hist(self, asset: str):
         if asset not in self.l1_hist.keys():
             self.l1_hist[asset] = pl.DataFrame(
-                schema={"best_bid": pl.Int64, "best_ask": pl.Int64, "timestamp": pl.Int64}
+                schema={"best_bid": pl.Int64, "best_ask": pl.Int64, "tick": pl.Int64}
             )
             self.l1_hist_buffer[asset] = []
 
-    def _update_l1_hist(self, asset: str, timestamp: int):
+    def _update_l1_hist(self, asset: str, tick: int):
         self._init_l1_hist(asset)
         new_row = {
             "best_bid": self.get_highest_bid(asset),
             "best_ask": self.get_lowest_ask(asset),
-            "timestamp": timestamp
+            "tick": tick
         }
         self.l1_hist_buffer[asset].append(new_row)
         # Only convert to DataFrame every N ticks or on demand

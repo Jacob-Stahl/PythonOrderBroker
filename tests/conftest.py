@@ -38,7 +38,7 @@ def sample_buy_order():
         type=OrderType.LIMIT,
         priceCents=10000,  # $100.00
         amount=50,
-        timestamp=1000000
+        tick=1000000
     )
 
 
@@ -52,7 +52,7 @@ def sample_sell_order():
         type=OrderType.LIMIT,
         priceCents=10050,  # $100.50
         amount=30,
-        timestamp=1000001
+        tick=1000001
     )
 
 
@@ -65,7 +65,7 @@ def sample_market_buy_order():
         side=Side.BUY,
         type=OrderType.MARKET,
         amount=25,
-        timestamp=1000002
+        tick=1000002
     )
 
 
@@ -90,7 +90,7 @@ def test_orders_data():
             "type": OrderType.LIMIT,
             "priceCents": 9950,
             "amount": 100,
-            "timestamp": 1000000
+            "tick": 1000000
         },
         {
             "id": 2,
@@ -99,7 +99,7 @@ def test_orders_data():
             "type": OrderType.LIMIT,
             "priceCents": 10050,
             "amount": 75,
-            "timestamp": 1000001
+            "tick": 1000001
         },
         {
             "id": 3,
@@ -108,6 +108,6 @@ def test_orders_data():
             "type": OrderType.LIMIT,
             "priceCents": 10000,
             "amount": 50,
-            "timestamp": 1000002
+            "tick": 1000002
         }
     ]

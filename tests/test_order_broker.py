@@ -40,8 +40,8 @@ def test_ear_marked_cash_is_correct_after_limit_orders():
     # ear marked cash should start at 0
     assert broker.accounts[1].earMarkedCashCents == 0
 
-    limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=50, timestamp=1)
-    limit_order2 = Order(id=2, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=150, amount=30, timestamp=2)
+    limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=50, tick=1)
+    limit_order2 = Order(id=2, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=150, amount=30, tick=2)
 
     assert broker.place_order(asset, limit_order1)
     assert broker.accounts[1].earmarked_cash_cents() == 100 * 50
@@ -63,8 +63,8 @@ def test_ear_marked_assets_is_correct_after_limit_orders():
     # ear marked assets should start at 0
     assert broker.accounts[1].earmarked_asset_amount(asset) == 0
 
-    limit_order1 = Order(id=1, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=40, timestamp=1)
-    limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=30, timestamp=2)
+    limit_order1 = Order(id=1, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=40, tick=1)
+    limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=30, tick=2)
 
     assert broker.place_order(asset, limit_order1)
     assert broker.accounts[1].earmarked_asset_amount(asset) == 40
@@ -85,8 +85,8 @@ def test_the_total_cash_and_assets_held_in_limits_are_the_same_as_earmarked_amou
     broker.accounts[1].portfolio[asset] = 100
     broker.create_market(asset)
 
-    limit_order_buy = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=200, amount=20, timestamp=1)
-    limit_order_sell = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=30, timestamp=2)
+    limit_order_buy = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=200, amount=20, tick=1)
+    limit_order_sell = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=30, tick=2)
 
     assert broker.place_order(asset, limit_order_buy)
     assert broker.place_order(asset, limit_order_sell)
@@ -120,7 +120,7 @@ def test_market_bids_with_no_asks():
     broker.accounts[1].portfolio[asset] = amount
 
     # place ask limit
-    ask_limit = Order(id=1, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=price, amount=amount, timestamp=1)
+    ask_limit = Order(id=1, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=price, amount=amount, tick=1)
     assert broker.place_order(asset, ask_limit)
 
     # check that the correct amount of assets are ear marked
@@ -132,7 +132,7 @@ def test_market_bids_with_no_asks():
     broker.deposit_cash(3, total)
 
     # first market buy
-    bid_market1 = Order(id=2, traderId=2, side=Side.BUY, type=OrderType.MARKET, amount=amount, timestamp=2)
+    bid_market1 = Order(id=2, traderId=2, side=Side.BUY, type=OrderType.MARKET, amount=amount, tick=2)
     assert broker.place_order(asset, bid_market1)
     
     # check balances after first match
@@ -143,7 +143,7 @@ def test_market_bids_with_no_asks():
     assert broker.accounts[1].earMarkedAssets.get(asset, 0) == 0
    
     # second market buy should fail
-    bid_market2 = Order(id=3, traderId=3, side=Side.BUY, type=OrderType.MARKET, amount=amount, timestamp=3)
+    bid_market2 = Order(id=3, traderId=3, side=Side.BUY, type=OrderType.MARKET, amount=amount, tick=3)
     assert not broker.place_order(asset, bid_market2)
     
     # ensure no assets or loss of cash
@@ -186,7 +186,7 @@ def test_market_ask_with_no_bids():
     broker.deposit_cash(1, total)
    
     # place bid limit
-    bid_limit = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=price, amount=amount, timestamp=1)
+    bid_limit = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=price, amount=amount, tick=1)
     assert broker.place_order(asset, bid_limit)
     
     # sellers have asset
@@ -194,7 +194,7 @@ def test_market_ask_with_no_bids():
         broker.accounts[tid].portfolio[asset] = amount
    
     # first market sell
-    sell_market1 = Order(id=2, traderId=2, side=Side.SELL, type=OrderType.MARKET, amount=amount, timestamp=2)
+    sell_market1 = Order(id=2, traderId=2, side=Side.SELL, type=OrderType.MARKET, amount=amount, tick=2)
     assert broker.place_order(asset, sell_market1)
    
     # check balances after first match
@@ -202,7 +202,7 @@ def test_market_ask_with_no_bids():
     assert broker.accounts[2].cashBalanceCents == total
     
     # second market sell should fail
-    sell_market2 = Order(id=3, traderId=3, side=Side.SELL, type=OrderType.MARKET, amount=amount, timestamp=3)
+    sell_market2 = Order(id=3, traderId=3, side=Side.SELL, type=OrderType.MARKET, amount=amount, tick=3)
     assert not broker.place_order(asset, sell_market2)
     
     # ensure no cash or loss of asset
@@ -245,7 +245,7 @@ def test_large_limits_are_split_correctly():
     # place large bid limit
     large_amount = 10
     price = 100
-    bid_limit = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=price, amount=large_amount, timestamp=1)
+    bid_limit = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=price, amount=large_amount, tick=1)
     assert broker.place_order(asset, bid_limit)
     
     # setup sellers
@@ -257,7 +257,7 @@ def test_large_limits_are_split_correctly():
     # process small ask market orders
     for i, sid in enumerate(seller_ids, start=2):
         order_id = i
-        sell_market = Order(id=order_id, traderId=sid, side=Side.SELL, type=OrderType.MARKET, amount=2, timestamp=i)
+        sell_market = Order(id=order_id, traderId=sid, side=Side.SELL, type=OrderType.MARKET, amount=2, tick=i)
         assert broker.place_order(asset, sell_market)
         expected_remaining = large_amount - 2 * (i - 1)
         bids_df = broker.markets[asset]._bids
@@ -307,7 +307,7 @@ def test_large_market_orders_are_correctly_matched():
             type=OrderType.LIMIT,
             priceCents=price,
             amount=amount,
-            timestamp=tid
+            tick=tid
         )
         assert broker.place_order(asset, limit_order)
     # deposit cash for buyer and place a market buy to match first four orders
@@ -319,7 +319,7 @@ def test_large_market_orders_are_correctly_matched():
         side=Side.BUY,
         type=OrderType.MARKET,
         amount=total_amount,
-        timestamp=6
+        tick=6
     )
     assert broker.place_order(asset, market_order)
     # buyer should receive matched assets
@@ -353,7 +353,7 @@ def test_limit_orders_fail_if_trader_has_insufficient_tradable_assets_or_cash():
     broker.create_market(asset)
 
     # placing a bid limit that exceeds available cash should fail
-    large_bid_limit = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=10, timestamp=1)
+    large_bid_limit = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=10, tick=1)
     assert not broker.place_order(asset, large_bid_limit)
 
     # check that no cash was ear marked
@@ -368,7 +368,7 @@ def test_limit_orders_fail_if_trader_has_insufficient_tradable_assets_or_cash():
     assert broker.accounts[1].portfolio.get(asset, 0) == 0
 
     # placing an ask limit that exceeds available assets should fail
-    large_ask_limit = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=10, timestamp=2)
+    large_ask_limit = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=10, tick=2)
     assert not broker.place_order(asset, large_ask_limit)
 
     # check that no assets were ear marked
@@ -400,13 +400,13 @@ def test_market_orders_fail_if_trader_has_insufficient_assets_or_cash():
     broker.deposit_cash(3, 2000)
     broker.accounts[4].portfolio[asset] = 20
 
-    large_bid_limit = Order(id=1, traderId=3, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=10, timestamp=1)
-    large_ask_limit = Order(id=2, traderId=4, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=10, timestamp=2)
+    large_bid_limit = Order(id=1, traderId=3, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=10, tick=1)
+    large_ask_limit = Order(id=2, traderId=4, side=Side.SELL, type=OrderType.LIMIT, priceCents=100, amount=10, tick=2)
     assert broker.place_order(asset, large_bid_limit)
     assert broker.place_order(asset, large_ask_limit)
 
     # account 1 places a market buy that exceeds available cash
-    large_market_buy = Order(id=3, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=10, timestamp=3)
+    large_market_buy = Order(id=3, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=10, tick=3)
     assert not broker.place_order(asset, large_market_buy)
 
     # total cash and assets held in limits should be unchanged
@@ -418,7 +418,7 @@ def test_market_orders_fail_if_trader_has_insufficient_assets_or_cash():
     assert broker.accounts[1].portfolio.get(asset, 0) == 0
 
     # account 2 places a market sell that exceeds available assets
-    large_market_sell = Order(id=4, traderId=2, side=Side.SELL, type=OrderType.MARKET, amount=10, timestamp=4)
+    large_market_sell = Order(id=4, traderId=2, side=Side.SELL, type=OrderType.MARKET, amount=10, tick=4)
     assert not broker.place_order(asset, large_market_sell)
 
     # total cash and assets held in limits should be unchanged
@@ -438,67 +438,67 @@ def test_l1_history_is_recorded_correctly_for_a_single_asset():
     broker.create_market(asset)
 
     # place limit orders and check L1 history
-    limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, timestamp=1)
+    limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, tick=1)
     broker.place_order(asset, limit_order1)
     l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 1
     assert l1_hist[0, "best_bid"] == 100
     assert l1_hist[0, "best_ask"] == None
-    assert l1_hist[0, "timestamp"] == 1
+    assert l1_hist[0, "tick"] == 1
 
-    limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=3, timestamp=2)
+    limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=3, tick=2)
     broker.place_order(asset, limit_order2)
     l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 2
     assert l1_hist[1, "best_bid"] == 100
     assert l1_hist[1, "best_ask"] == 150
-    assert l1_hist[1, "timestamp"] == 2
+    assert l1_hist[1, "tick"] == 2
 
     # place a slightly better bid limit
-    limit_order3 = Order(id=3, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=120, amount=2, timestamp=3)
+    limit_order3 = Order(id=3, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=120, amount=2, tick=3)
     broker.place_order(asset, limit_order3)
     l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 3
     assert l1_hist[2, "best_bid"] == 120
     assert l1_hist[2, "best_ask"] == 150
-    assert l1_hist[2, "timestamp"] == 3
+    assert l1_hist[2, "tick"] == 3
 
     # place a better ask limit
-    limit_order4 = Order(id=4, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=130, amount=4, timestamp=4)
+    limit_order4 = Order(id=4, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=130, amount=4, tick=4)
     broker.place_order(asset, limit_order4)
     l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 4
     assert l1_hist[3, "best_bid"] == 120
     assert l1_hist[3, "best_ask"] == 130
-    assert l1_hist[3, "timestamp"] == 4
+    assert l1_hist[3, "tick"] == 4
 
 
     # try to place a market buy that can be fully matched
-    market_order1 = Order(id=5, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=4, timestamp=5)
+    market_order1 = Order(id=5, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=4, tick=5)
     broker.place_order(asset, market_order1)
     l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 5
     assert l1_hist[4, "best_bid"] == 120
     assert l1_hist[4, "best_ask"] == 150
-    assert l1_hist[4, "timestamp"] == 5
+    assert l1_hist[4, "tick"] == 5
 
     # try to place a market sell that can be fully matched
-    market_order2 = Order(id=6, traderId=1, side=Side.SELL, type=OrderType.MARKET, amount=3, timestamp=6)
+    market_order2 = Order(id=6, traderId=1, side=Side.SELL, type=OrderType.MARKET, amount=3, tick=6)
     broker.place_order(asset, market_order2)
     l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 6
     assert l1_hist[5, "best_bid"] == 100
     assert l1_hist[5, "best_ask"] == 150
-    assert l1_hist[5, "timestamp"] == 6
+    assert l1_hist[5, "tick"] == 6
 
     # A failed order should not update L1 history
-    market_order3 = Order(id=7, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=1000, timestamp=7)
+    market_order3 = Order(id=7, traderId=1, side=Side.BUY, type=OrderType.MARKET, amount=1000, tick=7)
     broker.place_order(asset, market_order3)
     l1_hist = broker.get_l1_history(asset)
     assert l1_hist.height == 6  # no change
     assert l1_hist[5, "best_bid"] == 100
     assert l1_hist[5, "best_ask"] == 150
-    assert l1_hist[5, "timestamp"] == 6
+    assert l1_hist[5, "tick"] == 6
 
 
 def test_l1_history_is_recorded_correctly_for_multiple_assets():
@@ -512,12 +512,12 @@ def test_l1_history_is_recorded_correctly_for_multiple_assets():
 
     # place limit orders in both markets
     limit_orders_AAA = [
-        Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, timestamp=1),
-        Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=3, timestamp=2),
+        Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, tick=1),
+        Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=3, tick=2),
     ]
     limit_orders_BBB = [
-        Order(id=3, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=200, amount=4, timestamp=1),
-        Order(id=4, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=250, amount=6, timestamp=2),
+        Order(id=3, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=200, amount=4, tick=1),
+        Order(id=4, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=250, amount=6, tick=2),
     ]
 
     for order in limit_orders_AAA:
@@ -547,8 +547,8 @@ def test_close_account():
     # place some limit orders
     asset = "XYZ"
     broker.create_market(asset)
-    limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, timestamp=1)
-    limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=10, timestamp=2)
+    limit_order1 = Order(id=1, traderId=1, side=Side.BUY, type=OrderType.LIMIT, priceCents=100, amount=5, tick=1)
+    limit_order2 = Order(id=2, traderId=1, side=Side.SELL, type=OrderType.LIMIT, priceCents=150, amount=10, tick=2)
     broker.place_order(asset, limit_order1)
     broker.place_order(asset, limit_order2)
 

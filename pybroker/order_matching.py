@@ -35,7 +35,7 @@ class Matcher():
             "amount": pl.Int64,
             "priceCents": pl.Int64,
             "id": pl.Int64,
-            "timestamp": pl.Int64,
+            "tick": pl.Int64,
         }
         self._bids: pl.DataFrame = pl.DataFrame(schema=schema).with_row_index()
         self._asks: pl.DataFrame = pl.DataFrame(schema=schema).with_row_index()
@@ -91,7 +91,7 @@ class Matcher():
         depth: dict[str, list] = {
             "priceCents" : [],
             "cumAmount" : [],
-            "timestamp" : []
+            "tick" : []
         }
 
         # Use named rows to access by column name
@@ -99,7 +99,7 @@ class Matcher():
             amount_total += int(row["amount"])
             depth["priceCents"].append(int(row["priceCents"]))
             depth["cumAmount"].append(amount_total)
-            depth["timestamp"].append(row["timestamp"])
+            depth["tick"].append(row["tick"])
 
         return depth
 
@@ -112,10 +112,10 @@ class Matcher():
             return None
         
     def _sort_bids(self):
-        self._bids = self._bids.sort(["priceCents", "timestamp", ], descending=[True, False])
+        self._bids = self._bids.sort(["priceCents", "tick", ], descending=[True, False])
     
     def _sort_asks(self):
-        self._asks = self._asks.sort(["priceCents", "timestamp"], descending=[False, False])
+        self._asks = self._asks.sort(["priceCents", "tick"], descending=[False, False])
 
     def place_limit_order(self, limitOrder: Order):
         """Place limit orders on the correct side. Sort bids and asks after insertion"""

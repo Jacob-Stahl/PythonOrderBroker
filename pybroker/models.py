@@ -21,7 +21,7 @@ class Order:
     amount: int
     priceCents: int = 0
     id: int = randint(0, int(2**30))
-    timestamp: int = -1
+    tick: int = -1
 
     def __post_init__(self):
         # Ensure priceCents is 0 for market orders

@@ -59,7 +59,7 @@ class TestMatcher:
             side=Side.SELL,
             type=OrderType.MARKET,
             amount=10,
-            timestamp=2
+            tick=2
         )
         result_sell = matcher.match_market_order(sample_market_sell_order)
         assert result_sell is False  # Should fail due to no bids
@@ -71,7 +71,7 @@ class TestMatcher:
             side=Side.SELL,
             type=OrderType.MARKET,
             amount=10,
-            timestamp=2
+            tick=2
         )
         result_sell = matcher.match_market_order(sample_market_sell_order)
         assert result_sell is False  # Should fail due to no bids
@@ -87,7 +87,7 @@ class TestMatcher:
             type=OrderType.MARKET,
             priceCents=0,  # priceCents is ignored for market orders
             amount=10,
-            timestamp=2
+            tick=2
         )
 
         # Place a limit buy order to have some bids in the order book
@@ -98,7 +98,7 @@ class TestMatcher:
             type=OrderType.LIMIT,
             priceCents=10000,
             amount=10,
-            timestamp=1
+            tick=1
         )
         matcher.place_limit_order(buy_order)
         
@@ -126,7 +126,7 @@ class TestMatcher:
             type=OrderType.MARKET,
             priceCents=0,  # priceCents is ignored for market orders
             amount=10,
-            timestamp=2
+            tick=2
         )
         # Place a limit sell order to have some asks in the order book
         sell_order = Order(
@@ -136,7 +136,7 @@ class TestMatcher:
             type=OrderType.LIMIT,
             priceCents=10000,
             amount=10,
-            timestamp=1
+            tick=1
         )
         matcher.place_limit_order(sell_order)
         
@@ -155,7 +155,7 @@ class TestMatcher:
         assert first_ask['amount'] == sell_order.amount
 
     def test_get_ask_depth(self, sample_sell_order):
-        """Test get_ask_depth returns correct price levels and cumulative amounts sorted by price asc when timestamps equal."""
+        """Test get_ask_depth returns correct price levels and cumulative amounts sorted by price asc when ticks equal."""
         matcher = Matcher()
         matcher.place_limit_order(sample_sell_order)
         order2 = Order(
@@ -165,11 +165,11 @@ class TestMatcher:
             type=OrderType.LIMIT,
             priceCents=sample_sell_order.priceCents - 50,
             amount=15,
-            timestamp=sample_sell_order.timestamp
+            tick=sample_sell_order.tick
         )
         matcher.place_limit_order(order2)
         depth = matcher.get_ask_depth()
-        # With equal timestamps, asks are sorted by price ascending
+        # With equal ticks, asks are sorted by price ascending
         assert depth["priceCents"] == [order2.priceCents, sample_sell_order.priceCents]
         assert depth["cumAmount"] == [order2.amount, order2.amount + sample_sell_order.amount]
 
@@ -189,7 +189,7 @@ class TestMatcher:
             type=OrderType.LIMIT,
             priceCents=10000,
             amount=20,
-            timestamp=1
+            tick=1
         )
         matcher.place_limit_order(buy_limit)
         sell_limit = Order(
@@ -199,7 +199,7 @@ class TestMatcher:
             type=OrderType.LIMIT,
             priceCents=10000,
             amount=20,
-            timestamp=2
+            tick=2
         )
         matcher.place_limit_order(sell_limit)
         assert len(matcher._bids) == 1
@@ -212,7 +212,7 @@ class TestMatcher:
             side=Side.BUY,
             type=OrderType.MARKET,
             amount=20,
-            timestamp=3
+            tick=3
         )
         matcher.match_market_order(market_order)
 
@@ -227,7 +227,7 @@ class TestMatcher:
             side=Side.SELL,
             type=OrderType.MARKET,
             amount=20,
-            timestamp=4
+            tick=4
         )
         matcher.match_market_order(market_order_sell)
 
@@ -328,7 +328,7 @@ class TestOrderConversion:
             'type': [OrderType.LIMIT.value],
             'priceCents': [10000],
             'amount': [50],
-            'timestamp': [1000000]
+            'tick': [1000000]
         }
         df = pl.DataFrame(data)
         
@@ -341,7 +341,7 @@ class TestOrderConversion:
         assert order.type == OrderType.LIMIT
         assert order.priceCents == 10000
         assert order.amount == 50
-        assert order.timestamp == 1000000
+        assert order.tick == 1000000
 
 
 class TestMatchingLogic:
