@@ -19,14 +19,15 @@ class FeedForwardNeuralNetwork(Agent):
         # Each element in the output vector corresponds to a specific action
         self._output_vector_size = 5
         
-        #TODO hardcoding this will be problematic if Observations ever changes
+        #TODO hardcoding this will be problematic if Observations ever change
         self._input_vector_size = 13 
 
         # Define the layers of the neural network
         self.layers: list[Layer] = [
-            Layer(input_size=self._input_vector_size, output_size=8, activation='relu'),
-            Layer(input_size=8, output_size=8, activation='relu'),
-            Layer(input_size=8, output_size=self._output_vector_size, activation='sigmoid')
+            Layer(input_size=self._input_vector_size, 
+                  output_size=128, activation='relu'),
+            Layer(input_size=128, 
+                  output_size=self._output_vector_size, activation='sigmoid')
         ]
 
     def policy(self, observations: Observations) -> Actions:
@@ -101,13 +102,17 @@ class FeedForwardNeuralNetwork(Agent):
 
 class Layer:
     def __init__(self, input_size: int, output_size: int, 
-                 activation: str = 'relu', mutation_strength: float = 0.1) -> None:
+                 activation: str = 'relu', mutation_strength: float = 1.0) -> None:
         self.input_size = input_size
         self.output_size = output_size
         self.activation = activation
         self.weights = np.random.randn(output_size, input_size)
         self.biases = np.zeros((output_size, 1))
         self.mutation_strength = mutation_strength
+
+        # normalize weights
+        mean = np.mean(self.weights)
+        self.weights = (self.weights - mean)
     
     def forward(self, input_vector: np.ndarray) -> np.ndarray:
         z = np.dot(self.weights, input_vector) + self.biases
