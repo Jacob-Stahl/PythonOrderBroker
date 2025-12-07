@@ -5,8 +5,8 @@ services:
     image: eclipse-mosquitto:latest
     container_name: mosquitto
     ports:
-      - "1883:1883"
-      - "9001:9001"
+      - "1883:1883" # MQTT port (Broker pushes messages here)
+      - "9001:9001" # WebSocket port (Used for dashboards)
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - mosquitto_data:/mosquitto/data
