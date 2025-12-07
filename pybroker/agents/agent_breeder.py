@@ -166,7 +166,13 @@ class AgentBreeder():
         Returns True if pressure was applied successfully, False otherwise.
         """
 
-        withdrawn_cash = 25 # TODO make this configurable
+        account = broker.get_account_info(traderId)
+        total_account_cash = account.cashBalanceCents
+        if total_account_cash <= 0:
+            return False  # No cash to withdraw, skip applying pressure
+
+        withdrawn_cash = total_account_cash // 100  # Withdraw 1% of total cash in agent's accounts
+
         try:
             broker.withdraw_cash(traderId, withdrawn_cash)
         except:

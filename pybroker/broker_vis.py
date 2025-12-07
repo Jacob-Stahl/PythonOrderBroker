@@ -144,3 +144,33 @@ def average_bid_ask_spread_over_time(broker: Broker, asset: str):
     ax.set_title("Average of Best Bid and Ask Over Time")
     ax.legend()
     plt.show()
+
+def show_price_over_time(broker: Broker, asset: str, ticks_per_bar: int = 1000):
+
+    l1_hist: pl.DataFrame = broker.l1_hist[asset]
+
+    price_df = broker.get_l1_history(asset)
+
+    # columns: "best_bid", "best_ask", "tick"
+    bar_prices = price_df.select([
+        pl.col("tick"),
+        ((pl.col("best_bid") + pl.col("best_ask")) / 2).alias("last")
+    ]).with_columns([
+        (pl.col("tick") // ticks_per_bar).alias("bar")
+    ]).group_by("bar").agg([
+        pl.col("last").first().alias("open"),
+        pl.col("last").max().alias("max"),
+        pl.col("last").min().alias("min"),
+        pl.col("last").last().alias("last")
+    ]).sort("bar").to_pandas()
+
+
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(bar_prices['bar'] * ticks_per_bar, bar_prices['last'], label='Closing Price', color='blue')
+    ax.fill_between(bar_prices['bar'] * ticks_per_bar, bar_prices['min'], bar_prices['max'], color='lightblue', alpha=0.5, label='High-Low Range')
+    ax.set_xlabel('Tick')
+    ax.set_ylabel('Price (cents)')
+    ax.set_title(f'Price of {asset} Over Time')
+    ax.legend()
+    plt.show()
