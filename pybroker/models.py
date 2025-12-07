@@ -109,7 +109,4 @@ class Bar(ABC):
     lowCents: int
     closeCents: int
     volume: int
-
-@dataclass
-class TickBar(Bar):
-    nTicks: int
+    ticks: int
