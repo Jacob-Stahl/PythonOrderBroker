@@ -8,3 +8,4 @@ scipy
 pyarrow
 ipykernel
 networkx
+paho-mqtt
