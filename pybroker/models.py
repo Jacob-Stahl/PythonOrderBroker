@@ -1,5 +1,6 @@
 from typing import Union
 from dataclasses import dataclass, field, asdict
+from abc import ABC, abstractmethod
 from enum import Enum
 import polars as pl
 from random import randint
@@ -101,3 +102,14 @@ class Level1MarketData:
     standard_deviation_100: Union[float, None] = None
 
     
+@dataclass
+class Bar(ABC):
+    openCents: int
+    highCents: int
+    lowCents: int
+    closeCents: int
+    volume: int
+
+@dataclass
+class TickBar(Bar):
+    nTicks: int
