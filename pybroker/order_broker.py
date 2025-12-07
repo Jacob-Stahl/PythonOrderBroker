@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, asdict
 from enum import Enum
-from pybroker.models import Level1MarketData, Order, OrderType, Match, Side, Account
+from pybroker.event_publisher import EventPublisher
+from pybroker.models import *
 from pybroker.order_matching import Matcher
 from typing import Union
 from copy import deepcopy
@@ -13,7 +14,7 @@ from pybroker.broker_logging import logger, l1_logger
 
 class Broker:
 
-    def __init__(self) -> None:
+    def __init__(self, event_publisher: EventPublisher | None = None) -> None:
 
         self.tick_count: int = 0
 
@@ -26,6 +27,13 @@ class Broker:
         # asset - L1 history DataFrame
         self.l1_hist: dict[str, pl.DataFrame] = {}
         self.l1_hist_buffer: dict[str, list] = {}
+
+        # optionally publish events
+        self.event_publisher = event_publisher
+        self.tick_bar_aggregator: TickBarAggregator = TickBarAggregator(
+            n_ticks=100, #TODO make configurable. should be able to support multiple bar sizes simultaneously
+            event_publisher=event_publisher
+        )
 
     def next_tick(self) -> int:
         self.tick_count += 1
@@ -202,12 +210,28 @@ class Broker:
             isSuccessful = False
 
         if isSuccessful:
-            # update l1 hist
-            self._update_l1_hist(asset, order.tick)
-
-        logger.info(f"Order placed sucessfully {asdict(order)}")
+            self.broadcast_excecuted_order(asset, order)
+        else:
+            self.broadcast_failed_order(asset, order)
 
         return isSuccessful
+    
+    def broadcast_excecuted_order(self, asset: str, order: Order):
+        # update l1 hist
+            self._update_l1_hist(asset, order.tick)
+            if self.event_publisher:
+                self.event_publisher.order_executed(asset, order)
+                self.tick_bar_aggregator.add_tick(
+                    self.get_level_1_market_data(asset),
+                    asset
+                )
+                
+            logger.info(f"Order placed successfully {asdict(order)}")
+
+    def broadcast_failed_order(self, asset: str, order: Order):
+        logger.info(f"Order placement failed {asdict(order)}")
+        if self.event_publisher:
+            self.event_publisher.order_cancelled(asset, order)
         
     def get_lowest_ask(self, asset:str) -> Union[None, int]:
         """try to get the lowest ask for a given asset"""
@@ -331,3 +355,27 @@ class Broker:
     def get_level_1_market_data(self, asset: str) -> Level1MarketData:
         assert asset in self.markets.keys(), f"Market for asset '{asset}' does not exist"
         return self.markets[asset].get_level_1_market_data()
+    
+
+class TickBarAggregator:
+    def __init__(self, 
+                 n_ticks:int = 10, 
+                 event_publisher: EventPublisher | None = None) -> None:
+        self.n_ticks = n_ticks
+        self.event_publisher = event_publisher
+        self.tick_buffer: list[Level1MarketData] = []
+
+    def add_tick(self, l1_data: Level1MarketData, asset: str) -> None:
+        self.tick_buffer.append(l1_data)
+        if len(self.tick_buffer) >= self.n_ticks:
+            bar = Bar(
+                openCents=self.tick_buffer[0].best_bid if self.tick_buffer[0].best_bid is not None else 0,
+                highCents=max([tick.best_bid for tick in self.tick_buffer if tick.best_bid is not None] or [0]),
+                lowCents=min([tick.best_bid for tick in self.tick_buffer if tick.best_bid is not None] or [0]),
+                closeCents=self.tick_buffer[-1].best_bid if self.tick_buffer[-1].best_bid is not None else 0,
+                volume=0,  # Volume tracking can be implemented as needed
+                ticks=len(self.tick_buffer)
+            )
+            self.tick_buffer = []
+            if self.event_publisher:
+                self.event_publisher.publish_tick_bar(asset, bar)

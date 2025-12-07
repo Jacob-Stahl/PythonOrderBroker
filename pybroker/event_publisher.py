@@ -9,7 +9,7 @@ class EventPublisher:
     """Publish events to subscribers."""
 
     def __init__(self,
-                 topic: str,
+                 topic: str = "orderbook",
                  host: str = "localhost",
                  port: int = 1883) -> None:
         
@@ -17,17 +17,17 @@ class EventPublisher:
         self.client = MqttClient()
         self.client.connect(host, port, keepalive=60)
 
-    def execute_order(self, order: Order) -> None:
-        """Execute an order event."""
+    def order_executed(self, asset: str, order: Order) -> None:
+        """Order executed event."""
 
-        subtopic = f"{self.topic}/order_executed"
+        subtopic = f"{self.topic}/{asset}/order_executed"
         payload = asdict(order)
         self.client.publish(subtopic, str(payload))
 
-    def order_cancelled(self, order: Order) -> None:
+    def order_cancelled(self, asset: str, order: Order) -> None:
         """Order cancelled event."""
 
-        subtopic = f"{self.topic}/order_cancelled"
+        subtopic = f"{self.topic}/{asset}/order_cancelled"
         payload = asdict(order)
         self.client.publish(subtopic, str(payload))
 
