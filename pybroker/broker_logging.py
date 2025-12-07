@@ -14,7 +14,7 @@ file_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 
-# Level 1 Price Data Logging
+# Seperate log for Level 1 Price Data
 l1_logger = logging.getLogger("l1_data")
 l1_logger.setLevel(logging.INFO)
 
