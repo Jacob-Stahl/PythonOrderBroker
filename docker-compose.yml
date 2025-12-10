@@ -62,11 +62,18 @@ services:
 
     # TODO a crash will wipe the orderbook, unless data is persisted
     # dont forget about this
-    restart: unless-stopped
+    #restart: unless-stopped
     depends_on:
       - mosquitto
 
-volumes:
+    develop:
+      watch: # https://docs.docker.com/compose/how-tos/file-watch/
+        - path: ./orderbook
+          target: /app
+          action: sync+restart
 
+
+
+volumes:
   prometheus_data:
   grafana_data:

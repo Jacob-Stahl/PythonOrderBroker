@@ -2,8 +2,8 @@
 - Install requirements
     `pip install -r requirements.txt`
 
-- Launch Mosquitto MQTT broker 
-    `docker compose up`
+- Launch all services with 
+    `docker compose up` or `docker compose up --watch` for development
 
 # Viewing order flow and logs with MQTT Explorer
 
