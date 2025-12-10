@@ -4,6 +4,23 @@ from dataclasses import dataclass, asdict
 from paho.mqtt.client import Client as MqttClient
 from typing import Any, Callable, Dict, List
 from pybroker.models import *
+import json
+
+
+def serilize_dataclass(obj: Any) -> str:
+    """Serialize a dataclass to JSON string."""
+    if hasattr(obj, "__dataclass_fields__"):
+        dict_obj = asdict(obj)
+
+        for key, value in dict_obj.items():
+            if isinstance(value, Enum):
+                dict_obj[key] = value.name
+            else:
+                dict_obj[key] = value
+
+        return json.dumps(dict_obj)
+
+    raise TypeError("Object is not a dataclass")
 
 class EventPublisher:
     """Publish events to subscribers."""
@@ -21,19 +38,19 @@ class EventPublisher:
         """Order executed event."""
 
         subtopic = f"{self.topic}/{asset}/order_executed"
-        payload = asdict(order)
-        self.client.publish(subtopic, str(payload))
+        payload = serilize_dataclass(order)
+        self.client.publish(subtopic, payload)
 
     def order_cancelled(self, asset: str, order: Order) -> None:
         """Order cancelled event."""
 
         subtopic = f"{self.topic}/{asset}/order_cancelled"
-        payload = asdict(order)
-        self.client.publish(subtopic, str(payload))
+        payload = serilize_dataclass(order)
+        self.client.publish(subtopic, payload)
 
     def publish_tick_bar(self, asset: str, tick_bar: Bar) -> None:
         """Publish a tick bar event."""
 
         subtopic = f"{self.topic}/{asset}/bars/tick"
-        payload = asdict(tick_bar)
-        self.client.publish(subtopic, str(payload))
+        payload = serilize_dataclass(tick_bar)
+        self.client.publish(subtopic, payload)

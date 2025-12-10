@@ -31,7 +31,7 @@ class Broker:
         # optionally publish events
         self.event_publisher = event_publisher
         self.tick_bar_aggregator: TickBarAggregator = TickBarAggregator(
-            n_ticks=100, #TODO make configurable. should be able to support multiple bar sizes simultaneously
+            n_ticks=1000, #TODO make configurable. should be able to support multiple bar sizes simultaneously
             event_publisher=event_publisher
         )
 
@@ -358,8 +358,7 @@ class Broker:
     
 
 class TickBarAggregator:
-    def __init__(self, 
-                 n_ticks:int = 10, 
+    def __init__(self, n_ticks: int,
                  event_publisher: EventPublisher | None = None) -> None:
         self.n_ticks = n_ticks
         self.event_publisher = event_publisher
@@ -369,10 +368,10 @@ class TickBarAggregator:
         self.tick_buffer.append(l1_data)
         if len(self.tick_buffer) >= self.n_ticks:
             bar = Bar(
-                openCents=self.tick_buffer[0].best_bid if self.tick_buffer[0].best_bid is not None else 0,
-                highCents=max([tick.best_bid for tick in self.tick_buffer if tick.best_bid is not None] or [0]),
-                lowCents=min([tick.best_bid for tick in self.tick_buffer if tick.best_bid is not None] or [0]),
-                closeCents=self.tick_buffer[-1].best_bid if self.tick_buffer[-1].best_bid is not None else 0,
+                open=self.tick_buffer[0].best_bid if self.tick_buffer[0].best_bid is not None else 0,
+                high=max([tick.best_bid for tick in self.tick_buffer if tick.best_bid is not None] or [0]),
+                low=min([tick.best_bid for tick in self.tick_buffer if tick.best_bid is not None] or [0]),
+                close=self.tick_buffer[-1].best_bid if self.tick_buffer[-1].best_bid is not None else 0,
                 volume=0,  # Volume tracking can be implemented as needed
                 ticks=len(self.tick_buffer)
             )

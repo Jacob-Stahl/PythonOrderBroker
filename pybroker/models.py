@@ -104,9 +104,9 @@ class Level1MarketData:
     
 @dataclass
 class Bar(ABC):
-    openCents: int
-    highCents: int
-    lowCents: int
-    closeCents: int
+    open: int
+    high: int
+    low: int
+    close: int
     volume: int
     ticks: int
