@@ -12,8 +12,8 @@ services:
       - "9001:9001" # WebSocket port (Used for dashboards)
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
-      - ./mosquitto_data:/mosquitto/data
-      - ./mosquitto_log:/mosquitto/log
+      - ./mosquitto/mosquitto_data:/mosquitto/data
+      - ./mosquitto/mosquitto_log:/mosquitto/log
 
   # Data collection agent that gathers metrics and sends them to Prometheus
   telegraf:
@@ -38,7 +38,7 @@ services:
       - "9090:9090" # Prometheus UI
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus:/prometheus
+      - ./prometheus/data:/prometheus
 
   # Queries databases and visualizes metrics with dashboards
   # TODO : increase grafana update freqency: https://questdb.com/blog/increase-grafana-refresh-rate-frequency/
@@ -54,7 +54,6 @@ services:
       - ./grafana_data:/var/lib/grafana
 
 volumes:
-  mosquitto_data:
-  mosquitto_log:
+
   prometheus_data:
   grafana_data:
