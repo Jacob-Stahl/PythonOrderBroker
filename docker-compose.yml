@@ -1,19 +1,53 @@
 version: "3.9"
 
 services:
+
+  # MQTT Broker Service that allows services to communicate via MQTT protocol
   mosquitto:
     image: eclipse-mosquitto:latest
     container_name: mosquitto
+    restart: unless-stopped
     ports:
       - "1883:1883" # MQTT port (Broker pushes messages here)
       - "9001:9001" # WebSocket port (Used for dashboards)
     volumes:
       - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
-      - mosquitto_data:/mosquitto/data
-      - mosquitto_log:/mosquitto/log
+      - ./mosquitto_data:/mosquitto/data
+      - ./mosquitto_log:/mosquitto/log
+
+  # Data collection agent that gathers metrics and sends them to Prometheus
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+    ports:
+      - "9273:9273" # Telegraf Prometheus endpoint
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+
+  # Time-Series database that stores metrics collected by Telegraf
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    depends_on:
+      - telegraf
+    ports:
+      - "9090:9090" # Prometheus UI
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus:/prometheus
+
+  # Queries databases and visualizes metrics with dashboards
+  # TODO : increase grafana update freqency: https://questdb.com/blog/increase-grafana-refresh-rate-frequency/
   grafana:
     image: grafana/grafana
     container_name: grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
@@ -22,3 +56,5 @@ services:
 volumes:
   mosquitto_data:
   mosquitto_log:
+  prometheus_data:
+  grafana_data:
