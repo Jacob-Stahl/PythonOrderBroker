@@ -53,6 +53,19 @@ services:
     volumes:
       - ./grafana_data:/var/lib/grafana
 
+  # Orderbook Service written in C++. 
+  # Compiles in container, and listens for FIX messages over MQTT
+  orderbook:
+    build:
+      context: ./orderbook
+    container_name: orderbook
+
+    # TODO a crash will wipe the orderbook, unless data is persisted
+    # dont forget about this
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+
 volumes:
 
   prometheus_data:
