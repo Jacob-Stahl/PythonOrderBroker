@@ -73,7 +73,6 @@ services:
           action: sync+restart
 
 
-
 volumes:
   prometheus_data:
   grafana_data:
