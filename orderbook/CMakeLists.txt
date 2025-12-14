@@ -16,7 +16,6 @@ FetchContent_MakeAvailable(googletest)
 add_executable(orderbook main.cpp)
 
 ### UNIT TESTS WITH GOOGLE TEST###
-
 # https://google.github.io/googletest/quickstart-cmake.html
 enable_testing()
 add_executable(unittests tests/test_orderbook.cpp)

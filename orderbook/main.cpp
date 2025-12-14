@@ -1,10 +1,8 @@
 #include <iostream>
+#include <mqtt/async_client.h>
 
 int main() {
     // Simple C++ Orderbook application
-
-
-
 
 
     // Some comment

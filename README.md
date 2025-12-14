@@ -17,3 +17,4 @@ https://mqtt-explorer.com/
 # References
 
 - https://www.fixtrading.org/standards/fix-4-4/
+- https://github.com/eclipse-paho/paho.mqtt.cpp
