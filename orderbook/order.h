@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 /// @brief Subset of the order types found here: https://www.onixs.biz/fix-dictionary/4.4/tagNum_40.html
 enum OrdType{
     MARKET = 1,
