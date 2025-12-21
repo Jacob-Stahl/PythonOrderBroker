@@ -212,6 +212,9 @@ __marimo__/
 
 grafana_data/*
 mosquitto/*
-mosquitto_data/*
+mosquitto_data/* 
 prometheus/*
 !prometheus/*prometheus.yml
+.vscode/*
+orderbook/main.dSYM/*
+orderbook/main
