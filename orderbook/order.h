@@ -27,6 +27,8 @@ struct Order{
     std::string symbol;
     /// @brief Order type (Market, Limit, Stop).
     OrdType type;
+    /// @brief Time the order was recieved by the service
+    long int timestamp;
 
     /// @brief Calculate the total amount of the order.
     /// @return The total amount in cents.
