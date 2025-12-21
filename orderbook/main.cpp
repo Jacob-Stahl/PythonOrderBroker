@@ -1,4 +1,6 @@
 #include <iostream>
+#include "order.h"
+
 int main() {
     // Simple C++ Orderbook application
 
