@@ -31,6 +31,7 @@ class Matcher{
         // Market AND stop orders. TODO find a better name for this
         std::vector<Order> marketOrders;
 
+        // TODO move to seperate order notifier? https://www.tutorialspoint.com/cplusplus/cpp_interfaces.htm
         void notifyOrderPlaced(const Order& order);
         void notifyOrderPlacementFailed(const Order& order, std::string reason);
         void notifyOrderMatched();
@@ -39,7 +40,7 @@ class Matcher{
         /// @param lastOrderTimestamp 
         void matchOrders();
 
-        /// @brief Try to match a specific order. Should ONLY pass market orders, or orders that can be treated as market
+        /// @brief Try to match a specific order. Should ONLY pass market orders, or orders that should be treated as market orders
         /// @param order 
         void matchOrder(const Order& order);
 
@@ -54,3 +55,9 @@ class Matcher{
         Spread Matcher::getSpread();
 };
 
+struct Match{
+    Order order;
+    std::vector<Order> matchingOrders;
+
+    Match(const Order& order) : order(order), matchingOrders() {}
+};

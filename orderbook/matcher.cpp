@@ -14,7 +14,7 @@ Spread Matcher::getSpread(){
 
 void Matcher::addOrder(const Order& order)
 {   
-    // TODO mutex that locks the book until orders are added
+    // TODO mutex that locks the book until orders are added, and matched
 
     // Prevents old orders from being added after new ones.
     if(order.timestamp < lastOrderTimestamp)
@@ -41,11 +41,9 @@ void Matcher::addOrder(const Order& order)
     {
         marketOrders.push_back(order);
     }
-
     lastOrderTimestamp = order.timestamp;
-    notifyOrderPlaced(order);
 
-    // TODO unlock mutex here? call match async?
+    notifyOrderPlaced(order);
     matchOrders();
 };
 
@@ -67,7 +65,14 @@ void Matcher::matchOrders()
 };
 
 void Matcher::matchOrder(const Order& order){
+    switch(order.side){
+        case(BUY) : {
+            
+        }
+        case(SELL) : {
 
+        }
+    }
 }
 
 
