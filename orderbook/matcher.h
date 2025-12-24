@@ -18,12 +18,17 @@ class Matcher{
 
     private:
         long int lastOrderTimestamp = 0;
-        std::map<long int, std::queue<Order>> sellBook;
-        std::map<long int, std::queue<Order>> buyBook;
+        std::map<long int, std::queue<Order>> sellLimits;
+        std::map<long int, std::queue<Order>> buyLimits;
 
-        void matchOrders();
+        std::queue<Order> buyQueue;
+        std::queue<Order> sellQueue;
+
+        void matchOrders(int lastOrderTimestamp);
 
     public:
+
+        Matcher() = default;
 
         /// @brief Add order to the book
         /// @param order 
