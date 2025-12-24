@@ -28,9 +28,20 @@ class Matcher{
         std::set<long int> sellPrices;
         std::set<long int> buyPrices;
 
+        // Market AND stop orders. TODO find a better name for this
         std::vector<Order> marketOrders;
 
-        void matchOrders(int lastOrderTimestamp);
+        void notifyOrderPlaced(const Order& order);
+        void notifyOrderPlacementFailed(const Order& order, std::string reason);
+        void notifyOrderMatched();
+
+        /// @brief Try to find matches for all orders on the book
+        /// @param lastOrderTimestamp 
+        void matchOrders();
+
+        /// @brief Try to match a specific order. Should ONLY pass market orders, or orders that can be treated as market
+        /// @param order 
+        void matchOrder(const Order& order);
 
     public:
 

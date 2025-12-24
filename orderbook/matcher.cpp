@@ -3,7 +3,14 @@
 #include <vector>
 #include <map>
 #include <stdexcept>
+#include <iostream>
+#include <string>
+#include <string_view>
+#include <format>
 
+Spread Matcher::getSpread(){
+    return Spread{*buyPrices.rbegin(), *sellPrices.rend()};
+}
 
 void Matcher::addOrder(const Order& order)
 {   
@@ -12,7 +19,7 @@ void Matcher::addOrder(const Order& order)
     // Prevents old orders from being added after new ones.
     if(order.timestamp < lastOrderTimestamp)
     {
-        throw new std::invalid_argument("Can't add order with a timestamp older than the last added order");
+        notifyOrderPlacementFailed(order, "Can't add order with a timestamp older than the last added order");
     }
 
     // Add limit orders to the book
@@ -36,18 +43,13 @@ void Matcher::addOrder(const Order& order)
     }
 
     lastOrderTimestamp = order.timestamp;
-    // TODO Added-To-Orderbook callback here?
+    notifyOrderPlaced(order);
 
     // TODO unlock mutex here? call match async?
-
-    matchOrders(lastOrderTimestamp);
+    matchOrders();
 };
 
-Spread Matcher::getSpread(){
-    return Spread{*buyPrices.rbegin(), *sellPrices.rend()};
-}
-
-void Matcher::matchOrders(int lastOrderTimestamp)
+void Matcher::matchOrders()
 {
    for(int i = 0; i < marketOrders.size(); i++){
         auto order = marketOrders[i];
@@ -60,8 +62,22 @@ void Matcher::matchOrders(int lastOrderTimestamp)
         };
 
         // Now we try to match this order
-
-        
-
+        matchOrder(order);
    }
 };
+
+void Matcher::matchOrder(const Order& order){
+
+}
+
+
+// Notifications
+void Matcher::notifyOrderPlaced(const Order& order){
+    std::cout << "Order " << order.ordId << " for trader " << order.traderId << " placed";
+}
+void Matcher::notifyOrderPlacementFailed(const Order& order, std::string reason){
+    std::cout << "Order " << order.ordId << " for trader " << order.traderId << " failed. Reason: " << reason;
+}
+void Matcher::notifyOrderMatched(){
+    std::cout << "Matched!";
+}

@@ -23,6 +23,10 @@ enum Side {
 
 struct Order{
 
+    /// @brief Id of the trader that placed this order
+    long int traderId;
+    /// @brief Unique id of this order
+    long int ordId;
     /// @brief Buy or Sell
     Side side;
     /// @brief Quantity of the order.
