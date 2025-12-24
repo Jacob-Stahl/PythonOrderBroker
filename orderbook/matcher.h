@@ -52,7 +52,7 @@ class Matcher{
         /// @param order 
         void addOrder(const Order& order);
 
-        Spread Matcher::getSpread();
+        Spread getSpread();
 };
 
 // TODO time of match might be important for message ordering down stream

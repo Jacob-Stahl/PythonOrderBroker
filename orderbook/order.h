@@ -2,6 +2,11 @@
 
 #include <string>
 
+struct Spread{
+    long int highestBid;
+    long int lowestAsk;
+};
+
 /// @brief Subset of the order types found here: https://www.onixs.biz/fix-dictionary/4.4/tagNum_40.html
 enum OrdType{
 
@@ -48,9 +53,4 @@ struct Order{
     /// @param marketPrice 
     /// @return 
     bool treatAsMarket(const Spread& spread);
-};
-
-struct Spread{
-    long int highestBid;
-    long int lowestAsk;
 };
