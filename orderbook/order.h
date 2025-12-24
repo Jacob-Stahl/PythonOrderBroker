@@ -4,8 +4,14 @@
 
 /// @brief Subset of the order types found here: https://www.onixs.biz/fix-dictionary/4.4/tagNum_40.html
 enum OrdType{
+
+    /// @brief matched with the best limit on the book
     MARKET = 1,
+
+    /// @brief buy or sell a specific price
     LIMIT = 2,
+
+    /// @brief matched with the best limit on the book, above/below a desired price threshold
     STOP = 3
 
 };
