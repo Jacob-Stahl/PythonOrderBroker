@@ -1,6 +1,7 @@
 #pragma once
 
 #include "order.h"
+#include "match.h"
 #include "notifier.h"
 #include <vector>
 #include <set>
@@ -31,7 +32,7 @@ class Matcher{
 
         // Market AND stop orders. TODO find a better name for this
         std::vector<Order> marketOrders;
-
+        
         INotifier notifier = MockNotifier();
 
         /// @brief Try to find matches for all orders on the book
@@ -56,12 +57,4 @@ class Matcher{
         void addOrder(const Order& order);
 
         Spread getSpread();
-};
-
-// TODO time of match might be important for message ordering down stream
-struct Match{
-    Order order;
-    std::vector<Order> matchingOrders;
-
-    Match(const Order& order) : order(order), matchingOrders() {}
 };
