@@ -43,5 +43,10 @@ struct Order{
     /// @brief Determine if the order should be treated as a market order based on the current market price.
     /// @param marketPrice 
     /// @return 
-    bool treatAsMarket(long int marketPrice);
+    bool treatAsMarket(const Spread& spread);
+};
+
+struct Spread{
+    long int highestBid;
+    long int lowestAsk;
 };

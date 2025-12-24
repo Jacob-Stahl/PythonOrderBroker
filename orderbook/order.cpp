@@ -6,7 +6,8 @@ long int Order::amt(){
     return qty * price;
 }
 
-bool Order::treatAsMarket(long int marketPrice){
+bool Order::treatAsMarket(const Spread& spread){
+    
     switch(type){
         case MARKET:
             return true;
@@ -15,15 +16,14 @@ bool Order::treatAsMarket(long int marketPrice){
         case STOP : {
 
             /*
-            https://www.onixs.biz/fix-dictionary/4.4/glossary.html#Stop:~:text=Stop-,A%20stop%20order%20to%20buy%20which%20becomes%20a%20market%20order%20when,stop%20price%20after%20the%20order%20is%20represented%20in%20the%20Trading%20Crowd.,-OrdType%20%3C40%3E
-            
+            https://www.onixs.biz/fix-dictionary/4.4/glossary.html#Stop:~:text=Stop-,A%20stop%20order%20to%20buy%20which%20becomes%20a%20market%20order%20when,stop%20price%20after%20the%20order%20is%20represented%20in%20the%20Trading%20Crowd.,-OrdType%20%3C40%3E      
             Treat buy-stop as a buy-market if marketPrice >= price
             Treat sell-stop as a sell-market if marketPrice <= price
             */
             if(side == BUY){
-                return marketPrice >= price;
+                return spread.lowestAsk >= price;
             } else {
-                return marketPrice <= price;
+                return spread.highestBid <= price;
             }
         }
     }

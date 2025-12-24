@@ -2,6 +2,7 @@
 
 #include "order.h"
 #include <vector>
+#include <set>
 #include <queue>
 #include <map>
 #include <stdexcept>
@@ -18,11 +19,16 @@ class Matcher{
 
     private:
         long int lastOrderTimestamp = 0;
+
+        //Order FIFO queues for different prices
         std::map<long int, std::queue<Order>> sellLimits;
         std::map<long int, std::queue<Order>> buyLimits;
 
-        std::queue<Order> buyQueue;
-        std::queue<Order> sellQueue;
+        // Ordered set of prices
+        std::set<long int> sellPrices;
+        std::set<long int> buyPrices;
+
+        std::vector<Order> marketOrders;
 
         void matchOrders(int lastOrderTimestamp);
 
@@ -34,4 +40,6 @@ class Matcher{
         /// @param order 
         void addOrder(const Order& order);
 
+        Spread Matcher::getSpread();
 };
+

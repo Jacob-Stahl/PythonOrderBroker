@@ -14,7 +14,6 @@ void Matcher::addOrder(const Order& order)
     {
         throw new std::invalid_argument("Can't add order with a timestamp older than the last added order");
     }
-    
 
     // Add limit orders to the book
     if(order.type == LIMIT)
@@ -23,24 +22,17 @@ void Matcher::addOrder(const Order& order)
         {
             case SELL:
                 this->sellLimits[order.price].push(order);
+                this->sellPrices.insert(order.price);
                 break;
             case BUY:
                 this->buyLimits[order.price].push(order);
+                this->buyPrices.insert(order.price);
                 break;
         }
     }
-    // market and stops get added to buy and sell queues
     else if (order.type == MARKET || order.type == STOP)
     {
-        switch(order.side)
-        {
-            case SELL:
-                this->buyQueue.push(order);
-                break;
-            case BUY:
-                this->sellQueue.push(order);
-                break;
-        }
+        marketOrders.push_back(order);
     }
 
     lastOrderTimestamp = order.timestamp;
@@ -51,7 +43,25 @@ void Matcher::addOrder(const Order& order)
     matchOrders(lastOrderTimestamp);
 };
 
+Spread Matcher::getSpread(){
+    return Spread{*buyPrices.rbegin(), *sellPrices.rend()};
+}
+
 void Matcher::matchOrders(int lastOrderTimestamp)
 {
-    
+   for(int i = 0; i < marketOrders.size(); i++){
+        auto order = marketOrders[i];
+        long int marketPrice;
+        Spread spread = getSpread();
+        
+        // Leave this order alone, and move to the next if it shouldn't be treated as a market order
+        if (!order.treatAsMarket(spread)){
+            continue;
+        };
+
+        // Now we try to match this order
+
+        
+
+   }
 };
