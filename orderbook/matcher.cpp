@@ -19,7 +19,7 @@ void Matcher::addOrder(const Order& order)
     // Prevents old orders from being added after new ones.
     if(order.timestamp < lastOrderTimestamp)
     {
-        notifyOrderPlacementFailed(order, "Can't add order with a timestamp older than the last added order");
+        this->notifier.notifyOrderPlacementFailed(order, "Can't add order with a timestamp older than the last added order");
     }
 
     // Add limit orders to the book
@@ -43,7 +43,7 @@ void Matcher::addOrder(const Order& order)
     }
     lastOrderTimestamp = order.timestamp;
 
-    notifyOrderPlaced(order);
+    this->notifier.notifyOrderPlaced(order);
     matchOrders();
 };
 
@@ -73,16 +73,4 @@ void Matcher::matchOrder(const Order& order){
 
         }
     }
-}
-
-
-// Notifications
-void Matcher::notifyOrderPlaced(const Order& order){
-    std::cout << "Order " << order.ordId << " for trader " << order.traderId << " placed";
-}
-void Matcher::notifyOrderPlacementFailed(const Order& order, std::string reason){
-    std::cout << "Order " << order.ordId << " for trader " << order.traderId << " failed. Reason: " << reason;
-}
-void Matcher::notifyOrderMatched(){
-    std::cout << "Matched!";
 }

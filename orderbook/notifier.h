@@ -1,14 +1,12 @@
 #include "order.h"
 #include <vector>
 
-
 class INotifier{
     public:
         virtual void notifyOrderPlaced(const Order& order);
         virtual void notifyOrderPlacementFailed(const Order& order, std::string reason);
         virtual void notifyOrderMatched();
 };
-
 
 /// @brief Notifier used for testing
 class MockNotifier: public INotifier{
@@ -17,4 +15,3 @@ class MockNotifier: public INotifier{
         void notifyOrderPlacementFailed(const Order& order, std::string reason);
         void notifyOrderMatched();
 };
-

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "order.h"
+#include "notifier.h"
 #include <vector>
 #include <set>
 #include <queue>
@@ -31,10 +32,7 @@ class Matcher{
         // Market AND stop orders. TODO find a better name for this
         std::vector<Order> marketOrders;
 
-        // TODO move to seperate order notifier? https://www.tutorialspoint.com/cplusplus/cpp_interfaces.htm
-        void notifyOrderPlaced(const Order& order);
-        void notifyOrderPlacementFailed(const Order& order, std::string reason);
-        void notifyOrderMatched();
+        INotifier notifier = MockNotifier();
 
         /// @brief Try to find matches for all orders on the book
         /// @param lastOrderTimestamp 
@@ -47,6 +45,11 @@ class Matcher{
     public:
 
         Matcher() = default;
+
+        Matcher(INotifier& notifier){
+            Matcher();
+            this->notifier = notifier;
+        }
 
         /// @brief Add order to the book
         /// @param order 
