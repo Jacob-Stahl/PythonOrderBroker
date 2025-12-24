@@ -64,10 +64,11 @@ void Matcher::matchOrders()
    }
 };
 
-void Matcher::matchOrder(const Order& order){
+void Matcher::matchOrder(const Order& order){ // Should this return a match, or send a notification?
     switch(order.side){
         case(BUY) : {
-            
+            // Iterate through price list
+            // for each price, look at the buckets for matches
         }
         case(SELL) : {
 

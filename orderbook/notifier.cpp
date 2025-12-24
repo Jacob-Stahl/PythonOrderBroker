@@ -10,6 +10,6 @@ void MockNotifier::notifyOrderPlaced(const Order& order){
 void MockNotifier::notifyOrderPlacementFailed(const Order& order, std::string reason){
     std::cout << "Order " << order.ordId << " for trader " << order.traderId << " failed. Reason: " << reason;
 }
-void MockNotifier::notifyOrderMatched(){
+void MockNotifier::notifyOrderMatched(const Match& match){
     std::cout << "Matched!";
 }
