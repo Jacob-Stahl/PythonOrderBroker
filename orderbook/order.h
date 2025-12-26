@@ -19,6 +19,8 @@ enum OrdType{
     /// @brief matched with the best limit on the book, above/below a desired price threshold
     STOP = 3
 
+    // TODO Stop limit
+
 };
 
 enum Side {
