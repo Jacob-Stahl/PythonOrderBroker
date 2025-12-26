@@ -92,6 +92,20 @@ bool Matcher::matchOrder(const Order& order){ // Should this return a match, or 
     return false;
 }
 
-void removeIdxs(std::vector<Order>& orderVec, std::set<Order>& idxToRemove){
+/// @brief Remove provided elements from an Order vec
+/// @param vec 
+/// @param idxToRemove 
+void removeIdxs(std::vector<Order>& vec, std::set<int>& idxToRemove){
     
+    // shift orders to keep over the ones to be removed.
+    size_t write = 0;
+    for (size_t read = 0; read < vec.size(); ++read) {
+        if (!(idxToRemove.find(read) == idxToRemove.end())) {
+            vec[write++] = std::move(vec[read]);
+        }
+    }
+
+    // at this point, there is a tail of garbage at the end of the vector.
+    // resize to remove it.
+    vec.resize(write);
 }
