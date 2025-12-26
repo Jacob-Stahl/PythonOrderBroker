@@ -49,7 +49,8 @@ void Matcher::addOrder(const Order& order)
 
 void Matcher::matchOrders()
 {
-   for(int i = 0; i < marketOrders.size(); i++){
+    std::set<int> marketOrdersToRemove{};
+    for(int i = 0; i < marketOrders.size(); i++){
         auto order = marketOrders[i];
         long int marketPrice;
         Spread spread = getSpread();
@@ -60,18 +61,37 @@ void Matcher::matchOrders()
         };
 
         // Now we try to match this order
-        matchOrder(order);
-   }
-};
+        bool wasMatched = matchOrder(order);
 
-void Matcher::matchOrder(const Order& order){ // Should this return a match, or send a notification?
-    switch(order.side){
-        case(BUY) : {
-            // Iterate through price list
-            // for each price, look at the buckets for matches
-        }
-        case(SELL) : {
-
+        if(wasMatched){
+            marketOrdersToRemove.insert(i);
         }
     }
+
+    removeIdxs(marketOrders, marketOrdersToRemove);
+};
+
+bool Matcher::matchOrder(const Order& order){ // Should this return a match, or send a notification?
+    Match match = Match(order);
+    switch(order.side){
+        case(BUY) : {
+            for (auto it = sellPrices.rbegin(); it != sellPrices.rend(); ++it){
+                int price = *it;
+                std::queue<Order> orderQueue = sellLimits[price];
+
+            }
+        }
+        case(SELL) : {
+            for (int price : buyPrices){
+                std::queue<Order> orderQueue = buyLimits[price];
+                
+            }
+        }
+    }
+
+    return false;
+}
+
+void removeIdxs(std::vector<Order>& orderVec, std::set<Order>& idxToRemove){
+    
 }

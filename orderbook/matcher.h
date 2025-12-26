@@ -41,7 +41,7 @@ class Matcher{
 
         /// @brief Try to match a specific order. Should ONLY pass market orders, or orders that should be treated as market orders
         /// @param order 
-        void matchOrder(const Order& order);
+        bool matchOrder(const Order& order);
 
     public:
 
@@ -58,3 +58,6 @@ class Matcher{
 
         Spread getSpread();
 };
+
+
+void removeIdxs(std::vector<Order>& orderVec, std::set<int>& idxToRemove);
