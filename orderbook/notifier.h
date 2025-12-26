@@ -1,3 +1,5 @@
+#pragma once
+
 #include "order.h"
 #include "match.h"
 #include <vector>
