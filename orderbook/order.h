@@ -36,6 +36,10 @@ struct Order{
     Side side;
     /// @brief Quantity of the order.
     long int qty;
+
+    // TODO add a fill prop here?
+
+
     /// @brief Price of the order in cents.
     long int price;
     /// @brief Symbol

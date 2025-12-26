@@ -9,12 +9,6 @@
 #include <map>
 #include <stdexcept>
 
-/*
-Buy/Sell
-    Price (Map)
-        Timestamp (FIFO Queue)
-
-*/
 
 /// @brief Processes orders for a single symbol
 class Matcher{
