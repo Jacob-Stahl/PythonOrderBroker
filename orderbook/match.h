@@ -9,4 +9,7 @@ struct Match{
     std::vector<Order> matchingOrders;
 
     Match(const Order& order) : order(order), matchingOrders() {}
+
+
+    bool isValid();
 };

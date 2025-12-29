@@ -61,36 +61,31 @@ void Matcher::matchOrders()
         };
 
         // Now we try to match this order
-        bool wasMatched = matchOrder(order);
+        Match match = Match(order);
+        
+        switch(order.side){
+            case(BUY) : {
+                for (auto it = sellPrices.rbegin(); it != sellPrices.rend(); ++it){
+                    int price = *it;
+                    std::queue<Order> orderQueue = sellLimits[price];
 
-        if(wasMatched){
+                }
+            }
+            case(SELL) : {
+                for (int price : buyPrices){
+                    std::queue<Order> orderQueue = buyLimits[price];
+
+                }
+            }
+        }
+
+        if(match.isValid()){
             marketOrdersToRemove.insert(i);
         }
     }
 
     removeIdxs(marketOrders, marketOrdersToRemove);
 };
-
-bool Matcher::matchOrder(const Order& order){ // Should this return a match, or send a notification?
-    Match match = Match(order);
-    switch(order.side){
-        case(BUY) : {
-            for (auto it = sellPrices.rbegin(); it != sellPrices.rend(); ++it){
-                int price = *it;
-                std::queue<Order> orderQueue = sellLimits[price];
-
-            }
-        }
-        case(SELL) : {
-            for (int price : buyPrices){
-                std::queue<Order> orderQueue = buyLimits[price];
-                
-            }
-        }
-    }
-
-    return false;
-}
 
 /// @brief Remove provided elements from an Order vec
 /// @param vec 
