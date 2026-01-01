@@ -49,8 +49,6 @@ struct Order{
     OrdType type;
     /// @brief Time the order was recieved by the service
     long int timestamp;
-
-
     /// @brief Number of items filled. 
     long int fill = 0;
     /// @brief Calculate the total amount of the order.
