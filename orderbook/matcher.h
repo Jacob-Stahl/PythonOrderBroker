@@ -64,7 +64,7 @@ class Matcher{
 
         void removeLimits(
             Side side,
-            std::map<int, std::set<int>>& limitsToRemove);
+            std::map<long int, std::set<int>>& limitsToRemove);
 };
 
 

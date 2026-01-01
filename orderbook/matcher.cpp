@@ -113,8 +113,8 @@ void Matcher::matchOrders()
 };
 
 bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
-    // sellLimits[price][order idx]
-    std::map<int, std::set<int>> limitsToRemove;
+    // price and order index to remove in sell limits. sellLimits[price][order idx]
+    std::map<long int, std::set<int>> limitsToRemove;
     bool marketOrderFilled = false;
     Spread updatedSpread = initialSpread;
 
@@ -145,7 +145,7 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
                 notifier.notifyOrderMatched(match);
                 limitsToRemove[price].insert(ordIdx);
             }
-            // Market order can be comp
+            // Market order can be completely filled
             else if (limUnFill >= markUnFill)
             {
                 long int fillThisMatch = markUnFill;
@@ -166,8 +166,6 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
         };
     }
     cleanUpAndExit:
-
-    // TODO: is it dangerous to clear matched limit after sending notifications?
     removeLimits(SELL, limitsToRemove);
     return marketOrderFilled;
 }
@@ -181,7 +179,7 @@ bool Matcher::tryFillSellMarket(Order& order, Spread& initialSpread){
     return false;
 }
 
-void Matcher::removeLimits(Side side, std::map<int, std::set<int>>& limitsToRemove){ 
+void Matcher::removeLimits(Side side, std::map<long int, std::set<int>>& limitsToRemove){ 
     for(auto priceBucket : limitsToRemove){
         int price = priceBucket.first;
         switch(side){
@@ -208,7 +206,7 @@ void Matcher::removeLimits(Side side, std::map<int, std::set<int>>& limitsToRemo
 /// @brief Remove provided elements from an Order vec
 /// @param vec 
 /// @param idxToRemove 
-void removeIdxs(std::vector<Order>& vec, std::set<int>& idxToRemove){
+void removeIdxs(std::vector<Order>& vec, const std::set<int>& idxToRemove){
     
     // shift orders to keep over the ones to be removed.
     size_t write = 0;
