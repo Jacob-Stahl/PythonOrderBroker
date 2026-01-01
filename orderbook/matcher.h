@@ -29,6 +29,8 @@ class Matcher{
         
         INotifier notifier = MockNotifier();
 
+        bool validateOrder(const Order& order);
+
         /// @brief Try to find matches for all orders on the book
         /// @param lastOrderTimestamp 
         void matchOrders();

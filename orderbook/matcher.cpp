@@ -16,14 +16,13 @@ void Matcher::addOrder(const Order& order)
 {   
     // TODO mutex that locks the book until orders are added, and matched
 
-    // Prevents old orders from being added after new ones.
-    if(order.timestamp < lastOrderTimestamp)
-    {
-        this->notifier.notifyOrderPlacementFailed(order, "Can't add order with a timestamp older than the last added order");
+    // Exit early and send notifications if order is invalid
+    if(!validateOrder(order)){
+        return;
     }
 
     // Add limit orders to the book
-    if(order.type == LIMIT)
+    if(order.type == LIMIT || order.type == STOPLIMIT)
     {
         switch(order.side)
         {
@@ -46,6 +45,39 @@ void Matcher::addOrder(const Order& order)
     this->notifier.notifyOrderPlaced(order);
     matchOrders();
 };
+
+bool Matcher::validateOrder(const Order& order){
+
+    // Prevents old orders from being added after new ones.
+    if(order.timestamp < lastOrderTimestamp)
+    {
+        this->notifier.notifyOrderPlacementFailed(order, 
+            "Can't add order with a timestamp older than the last added order");
+        return false;
+    }
+
+    // Prevent irrational stop limit orders from being added to the book
+    if(order.type == STOPLIMIT)
+    {
+        switch(order.side)
+        {
+            case SELL:
+                if(order.stopPrice < order.price){
+                    this->notifier.notifyOrderPlacementFailed(order, 
+                        "Stop-Limit SELL can't have a stop price below the limit price");
+                    return false;
+                }
+            case BUY:
+                if(order.stopPrice < order.price){
+                    this->notifier.notifyOrderPlacementFailed(order, 
+                        "Stop-Limit BUY can't have a stop price above the limit price");
+                    return false;
+                }
+        }
+    }
+
+    return true;
+}
 
 void Matcher::matchOrders()
 {
@@ -94,6 +126,10 @@ bool Matcher::tryFillBuyMarket(Order& order){
         // Iterate through orders, oldest to newest
         int ordIdx = 0;
         for(Order& limitOrd : sellLimits[price]){
+
+            // TODO, check if STOP LIMITs should be treated as limits!
+
+
             long int limUnFill = limitOrd.unfilled();
             long int markUnFill = order.unfilled();
 
