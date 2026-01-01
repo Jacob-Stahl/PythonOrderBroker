@@ -139,15 +139,10 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
                 long int fillThisMatch = limUnFill;
 
                 // TODO: does this update the order in the book?
-                // Update fills
                 limitOrd.fill = limitOrd.qty;
                 order.fill = order.fill + fillThisMatch;
-
-                // TODO: make sure creating a match like this doesn't 
-                // create problems when
-                // we make notifier async
-                Match match = Match(order, limitOrd, fillThisMatch);
                 
+                Match match = Match(order, limitOrd, fillThisMatch);
                 notifier.notifyOrderMatched(match);
                 limitsToRemove[price].insert(ordIdx);
             }
@@ -155,12 +150,10 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
             else if (limUnFill >= markUnFill)
             {
                 long int fillThisMatch = markUnFill;
-
                 limitOrd.fill = limitOrd.fill + fillThisMatch;
                 order.fill = order.qty;
 
                 Match match = Match(order, limitOrd, fillThisMatch);
-
                 notifier.notifyOrderMatched(match);
                 
                 // Limit isn't completely filled, leave it in the book
@@ -174,7 +167,6 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
             ordIdx++;
         };
     }
-
     marketOrderFilled:
 
     // TODO: is it dangerous to clear matched limit after sending notifications?
