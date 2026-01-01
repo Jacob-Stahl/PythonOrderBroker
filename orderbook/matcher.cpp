@@ -28,11 +28,11 @@ void Matcher::addOrder(const Order& order)
         switch(order.side)
         {
             case SELL:
-                this->sellLimits[order.price].push(order);
+                this->sellLimits[order.price].push_back(order);
                 this->sellPrices.insert(order.price);
                 break;
             case BUY:
-                this->buyLimits[order.price].push(order);
+                this->buyLimits[order.price].push_back(order);
                 this->buyPrices.insert(order.price);
                 break;
         }
@@ -61,31 +61,109 @@ void Matcher::matchOrders()
         };
 
         // Now we try to match this order
-        Match match = Match(order);
-        
+        bool filled = false;
+
         switch(order.side){
             case(BUY) : {
-                for (auto it = sellPrices.rbegin(); it != sellPrices.rend(); ++it){
-                    int price = *it;
-                    std::queue<Order> orderQueue = sellLimits[price];
-
-                }
+                filled = tryFillBuyMarket(order);
             }
             case(SELL) : {
-                for (int price : buyPrices){
-                    std::queue<Order> orderQueue = buyLimits[price];
-
-                }
+                filled = tryFillSellMarket(order);
             }
         }
+        
 
-        if(match.isValid()){
+        if(filled){
             marketOrdersToRemove.insert(i);
         }
     }
 
     removeIdxs(marketOrders, marketOrdersToRemove);
 };
+
+bool Matcher::tryFillBuyMarket(Order& order){
+    // sellLimits[price][order idx]
+    std::map<int, std::set<int>> limitsToRemove;
+
+    bool marketOrderFilled = false;
+
+    // Iterate through sell limit price buckets, lowest to highest
+    for (auto it = sellPrices.rbegin(); it != sellPrices.rend(); ++it){
+        int price = *it;
+        
+        // Iterate through orders, oldest to newest
+        int ordIdx = 0;
+        for(Order limitOrd : sellLimits[price]){
+            long int limUnFill = limitOrd.unfilled();
+            long int markUnFill = order.unfilled();
+
+            // Limit order can be completely filled
+            if(limUnFill <= markUnFill)
+            {
+                long int fillThisMatch = limUnFill;
+
+                // TODO: does this update the order in the book?
+                // Update fills
+                limitOrd.fill = limitOrd.qty;
+                order.fill = order.fill + fillThisMatch;
+
+                // TODO: make sure creating a match like this doesn't 
+                // create problems when
+                // we make notifier async
+                Match match = Match(order, limitOrd, fillThisMatch);
+                
+                notifier.notifyOrderMatched(match);
+                limitsToRemove[price].insert(ordIdx);
+            }
+            // Market order can be comp
+            else if (limUnFill >= markUnFill)
+            {
+                long int fillThisMatch = markUnFill;
+
+                limitOrd.fill = limitOrd.fill + fillThisMatch;
+                order.fill = order.qty;
+
+                Match match = Match(order, limitOrd, fillThisMatch);
+
+                notifier.notifyOrderMatched(match);
+                
+                // Limit isn't completely filled, leave it in the book
+                marketOrderFilled = true;
+            }
+
+            if (marketOrderFilled){
+                goto marketOrderFilled;
+            }
+            ordIdx++;
+        };
+    }
+
+    marketOrderFilled:
+
+    // TODO: is it dangerous to clear matched limit after sending notifications?
+    removeLimits(SELL, limitsToRemove);
+
+    return marketOrderFilled;
+}
+
+bool Matcher::tryFillSellMarket(Order& order){
+    for (int price : buyPrices){
+        //std::vector<Order> orderQueue = buyLimits[price];
+    }
+
+
+    return false;
+}
+
+void Matcher::removeLimits(Side side, std::map<int, std::set<int>>& limitsToRemove){ 
+    for(auto priceBucket : limitsToRemove){
+        int price = priceBucket.first;
+        switch(side){
+            case BUY : removeIdxs(buyLimits[price], limitsToRemove[price]);
+            case SELL : removeIdxs(sellLimits[price], limitsToRemove[price]);
+        }
+    }
+}
 
 /// @brief Remove provided elements from an Order vec
 /// @param vec 

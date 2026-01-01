@@ -17,8 +17,8 @@ class Matcher{
         long int lastOrderTimestamp = 0;
 
         //Order FIFO queues for different prices
-        std::map<long int, std::queue<Order>> sellLimits;
-        std::map<long int, std::queue<Order>> buyLimits;
+        std::map<long int, std::vector<Order>> sellLimits;
+        std::map<long int, std::vector<Order>> buyLimits;
 
         // Ordered set of prices
         std::set<long int> sellPrices;
@@ -33,9 +33,15 @@ class Matcher{
         /// @param lastOrderTimestamp 
         void matchOrders();
 
-        /// @brief Try to match a specific order. Should ONLY pass market orders, or orders that should be treated as market orders
+        /// @brief Tries to fill a buy market order as much as possible. Updates fill properties in matched orders
         /// @param order 
-        bool matchOrder(const Order& order);
+        /// @return true if filled completely
+        bool tryFillBuyMarket(Order& order);
+
+        /// @brief Tries to fill a sell market order as much as possible. Updates fill properties in matched orders
+        /// @param order 
+        /// @return true if filled completely
+        bool tryFillSellMarket(Order& order);
 
     public:
 
@@ -51,6 +57,10 @@ class Matcher{
         void addOrder(const Order& order);
 
         Spread getSpread();
+
+        void removeLimits(
+            Side side,
+            std::map<int, std::set<int>>& limitsToRemove);
 };
 
 

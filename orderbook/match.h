@@ -1,15 +1,23 @@
 #pragma once
-
 #include <vector>
 #include "order.h"
 
 // TODO time of match might be important for message ordering down stream
-struct Match{
-    Order order;
-    std::vector<Order> matchingOrders;
+class Match{
+    Order buyer;
+    Order seller;
+    long int qty;
 
-    Match(const Order& order) : order(order), matchingOrders() {}
+    public:
+        Match(const Order& buyer, const Order& seller, long int qty)
+        {
+            // TODO add guards order sides.
 
+            this->buyer = buyer;
+            this->seller = seller;
+            this->qty = qty;
+        }
 
-    bool isValid();
+        // TODO use proper getters
+        long int getQty() {return qty;}
 };

@@ -38,10 +38,6 @@ struct Order{
     Side side;
     /// @brief Quantity of the order.
     long int qty;
-
-    // TODO add a fill prop here?
-
-
     /// @brief Price of the order in cents.
     long int price;
     /// @brief Symbol
@@ -51,6 +47,9 @@ struct Order{
     /// @brief Time the order was recieved by the service
     long int timestamp;
 
+
+    /// @brief Number of items filled. 
+    long int fill = 0;
     /// @brief Calculate the total amount of the order.
     /// @return The total amount in cents.
     long int amt();
@@ -59,4 +58,14 @@ struct Order{
     /// @param marketPrice 
     /// @return 
     bool treatAsMarket(const Spread& spread);
+
+    bool fillComplete(){
+
+        // TODO add exception if fill > qty
+        return qty == fill;
+    }
+
+    long int unfilled(){
+        return qty - fill;
+    }
 };
