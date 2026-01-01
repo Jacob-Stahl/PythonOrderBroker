@@ -97,10 +97,10 @@ void Matcher::matchOrders()
 
         switch(order.side){
             case(BUY) : {
-                filled = tryFillBuyMarket(order);
+                filled = tryFillBuyMarket(order, spread);
             }
             case(SELL) : {
-                filled = tryFillSellMarket(order);
+                filled = tryFillSellMarket(order, spread);
             }
         }
         
@@ -113,23 +113,23 @@ void Matcher::matchOrders()
     removeIdxs(marketOrders, marketOrdersToRemove);
 };
 
-bool Matcher::tryFillBuyMarket(Order& order){
+bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
     // sellLimits[price][order idx]
     std::map<int, std::set<int>> limitsToRemove;
-
     bool marketOrderFilled = false;
+    Spread updatedSpread = initialSpread;
 
     // Iterate through sell limit price buckets, lowest to highest
     for (auto it = sellPrices.rbegin(); it != sellPrices.rend(); ++it){
         int price = *it;
+        updatedSpread.lowestAsk = price;
 
         // Iterate through orders, oldest to newest
         int ordIdx = 0;
         for(Order& limitOrd : sellLimits[price]){
-
-            // TODO, check if STOP LIMITs should be treated as limits!
-
-
+            if(!limitOrd.treatAsLimit(updatedSpread)){
+                continue;
+            }
             long int limUnFill = limitOrd.unfilled();
             long int markUnFill = order.unfilled();
 
@@ -167,6 +167,7 @@ bool Matcher::tryFillBuyMarket(Order& order){
                 marketOrderFilled = true;
             }
 
+            // Exit the loop if the order is filled
             if (marketOrderFilled){
                 goto marketOrderFilled;
             }
@@ -179,10 +180,12 @@ bool Matcher::tryFillBuyMarket(Order& order){
     // TODO: is it dangerous to clear matched limit after sending notifications?
     removeLimits(SELL, limitsToRemove);
 
+    // TODO: Update sellPrices and buyPrices sets!
+
     return marketOrderFilled;
 }
 
-bool Matcher::tryFillSellMarket(Order& order){
+bool Matcher::tryFillSellMarket(Order& order, Spread& initialSpread){
     for (int price : buyPrices){
         //std::vector<Order> orderQueue = buyLimits[price];
     }

@@ -37,13 +37,15 @@ class Matcher{
 
         /// @brief Tries to fill a buy market order as much as possible. Updates fill properties in matched orders
         /// @param order 
+        /// @param initialSpread
         /// @return true if filled completely
-        bool tryFillBuyMarket(Order& order);
+        bool tryFillBuyMarket(Order& order, Spread& initialSpread);
 
         /// @brief Tries to fill a sell market order as much as possible. Updates fill properties in matched orders
         /// @param order 
+        /// @param initialSpread
         /// @return true if filled completely
-        bool tryFillSellMarket(Order& order);
+        bool tryFillSellMarket(Order& order, Spread& initialSpread);
 
     public:
 
