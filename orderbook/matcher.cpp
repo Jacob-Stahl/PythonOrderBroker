@@ -21,7 +21,6 @@ void Matcher::addOrder(const Order& order)
         return;
     }
 
-    // Add limit orders to the book
     if(order.type == LIMIT || order.type == STOPLIMIT)
     {
         switch(order.side)
@@ -160,14 +159,13 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
                 marketOrderFilled = true;
             }
 
-            // Exit the loop if the order is filled
             if (marketOrderFilled){
-                goto marketOrderFilled;
+                goto cleanUpAndExit;
             }
             ordIdx++;
         };
     }
-    marketOrderFilled:
+    cleanUpAndExit:
 
     // TODO: is it dangerous to clear matched limit after sending notifications?
     removeLimits(SELL, limitsToRemove);
