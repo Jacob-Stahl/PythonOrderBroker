@@ -179,9 +179,6 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
 
     // TODO: is it dangerous to clear matched limit after sending notifications?
     removeLimits(SELL, limitsToRemove);
-
-    // TODO: Update sellPrices and buyPrices sets!
-
     return marketOrderFilled;
 }
 
@@ -198,8 +195,22 @@ void Matcher::removeLimits(Side side, std::map<int, std::set<int>>& limitsToRemo
     for(auto priceBucket : limitsToRemove){
         int price = priceBucket.first;
         switch(side){
-            case BUY : removeIdxs(buyLimits[price], limitsToRemove[price]);
-            case SELL : removeIdxs(sellLimits[price], limitsToRemove[price]);
+            case BUY : {
+                removeIdxs(buyLimits[price], limitsToRemove[price]);
+                
+                // If there are no order at this price, remove them from the set of prices
+                if (buyLimits[price].size() == 0){
+                    buyPrices.erase(price);
+                }
+            }
+            case SELL : {
+                removeIdxs(sellLimits[price], limitsToRemove[price]);
+
+                // If there are no order at this price, remove them from the set of prices
+                if(sellLimits[price].size() == 0){
+                    buyPrices.erase(price);
+                }
+            };
         }
     }
 }
