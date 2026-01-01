@@ -7,11 +7,12 @@ long int Order::amt(){
 }
 
 bool Order::treatAsMarket(const Spread& spread){
-    
     switch(type){
         case MARKET:
             return true;
         case LIMIT:
+            return false;
+        case STOPLIMIT:
             return false;
         case STOP : {
 
@@ -21,15 +22,28 @@ bool Order::treatAsMarket(const Spread& spread){
             Treat sell-stop as a sell-market if marketPrice <= price
             */
             if(side == BUY){
-                return spread.lowestAsk >= price;
+                return spread.lowestAsk >= stopPrice;
             } else {
-                return spread.highestBid <= price;
+                return spread.highestBid <= stopPrice;
             }
         }
     }
 }
 
-
-
-
-
+bool Order::treatAsLimit(const Spread& spread){
+    switch(type){
+        case MARKET:
+            return false;
+        case LIMIT:
+            return true;
+        case STOPLIMIT:
+            if(side == BUY){
+                return spread.lowestAsk >= stopPrice;
+            } else {
+                return spread.highestBid <= stopPrice;
+            }
+        case STOP : {
+            return false;
+        }
+    }
+}

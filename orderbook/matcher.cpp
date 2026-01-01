@@ -90,10 +90,10 @@ bool Matcher::tryFillBuyMarket(Order& order){
     // Iterate through sell limit price buckets, lowest to highest
     for (auto it = sellPrices.rbegin(); it != sellPrices.rend(); ++it){
         int price = *it;
-        
+
         // Iterate through orders, oldest to newest
         int ordIdx = 0;
-        for(Order limitOrd : sellLimits[price]){
+        for(Order& limitOrd : sellLimits[price]){
             long int limUnFill = limitOrd.unfilled();
             long int markUnFill = order.unfilled();
 

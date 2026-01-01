@@ -17,9 +17,10 @@ enum OrdType{
     LIMIT = 2,
 
     /// @brief matched with the best limit on the book, above/below a desired price threshold
-    STOP = 3
+    STOP = 3,
 
-    // TODO Stop limit
+    /// @brief matched with the best market on the book, above/below a desired price threshold
+    STOPLIMIT = 4
 
 };
 
@@ -40,6 +41,8 @@ struct Order{
     long int qty;
     /// @brief Price of the order in cents.
     long int price;
+    /// @brief Stop price of the order.
+    long int stopPrice;
     /// @brief Symbol
     std::string symbol;
     /// @brief Order type (Market, Limit, Stop).
@@ -58,6 +61,11 @@ struct Order{
     /// @param marketPrice 
     /// @return 
     bool treatAsMarket(const Spread& spread);
+
+    /// @brief Determine if the order should be treated as a limit order based on the current market price
+    /// @param spread 
+    /// @return 
+    bool treatAsLimit(const Spread& spread);
 
     bool fillComplete(){
 
