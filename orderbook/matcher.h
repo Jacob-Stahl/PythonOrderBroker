@@ -27,7 +27,7 @@ class Matcher{
         // Market AND stop orders. TODO find a better name for this
         std::vector<Order> marketOrders;
         
-        INotifier notifier = MockNotifier();
+        INotifier* notifier;
 
         bool validateOrder(const Order& order);
 
@@ -47,13 +47,10 @@ class Matcher{
         /// @return true if filled completely
         bool tryFillSellMarket(Order& order, Spread& initialSpread);
 
-    public:
-
         Matcher() = default;
-
-        Matcher(INotifier& notifier){
+    public:
+        Matcher(INotifier* notif): notifier(notif){
             Matcher();
-            this->notifier = notifier;
         }
 
         /// @brief Add order to the book
