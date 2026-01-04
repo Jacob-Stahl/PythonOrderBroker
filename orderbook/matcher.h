@@ -68,4 +68,4 @@ class Matcher{
 };
 
 
-void removeIdxs(std::vector<Order>& orderVec, std::set<int>& idxToRemove);
+void removeIdxs(std::vector<Order>& orderVec, const std::set<int>& idxToRemove);

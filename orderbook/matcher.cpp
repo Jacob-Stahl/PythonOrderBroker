@@ -8,6 +8,7 @@
 #include <string_view>
 #include <format>
 
+// TODO: handle edge cases where there are no limits on one side of the book
 Spread Matcher::getSpread(){
     return Spread{*buyPrices.rbegin(), *sellPrices.rend()};
 }
@@ -66,12 +67,14 @@ bool Matcher::validateOrder(const Order& order){
                         "Stop-Limit SELL can't have a stop price below the limit price");
                     return false;
                 }
+                break;
             case BUY:
-                if(order.stopPrice < order.price){
+                if(order.stopPrice > order.price){
                     this->notifier.notifyOrderPlacementFailed(order, 
                         "Stop-Limit BUY can't have a stop price above the limit price");
                     return false;
                 }
+                break;
         }
     }
 
@@ -82,7 +85,7 @@ void Matcher::matchOrders()
 {
     std::set<int> marketOrdersToRemove{};
     for(int i = 0; i < marketOrders.size(); i++){
-        auto order = marketOrders[i];
+        Order& order = marketOrders[i];
         long int marketPrice;
         Spread spread = getSpread();
         
@@ -97,9 +100,11 @@ void Matcher::matchOrders()
         switch(order.side){
             case(BUY) : {
                 filled = tryFillBuyMarket(order, spread);
+                break;
             }
             case(SELL) : {
                 filled = tryFillSellMarket(order, spread);
+                break;
             }
         }
         
@@ -119,8 +124,7 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
     Spread updatedSpread = initialSpread;
 
     // Iterate through sell limit price buckets, lowest to highest
-    for (auto it = sellPrices.rbegin(); it != sellPrices.rend(); ++it){
-        int price = *it;
+    for (long int price : sellPrices){
         updatedSpread.lowestAsk = price;
 
         // Iterate through orders, oldest to newest
@@ -171,8 +175,20 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
 }
 
 bool Matcher::tryFillSellMarket(Order& order, Spread& initialSpread){
-    for (int price : buyPrices){
-        //std::vector<Order> orderQueue = buyLimits[price];
+    // price and order index to remove in sell limits. sellLimits[price][order idx]
+    std::map<long int, std::set<int>> limitsToRemove;
+    bool marketOrderFilled = false;
+    Spread updatedSpread = initialSpread;
+
+    // Iterate through buy limit price buckets, highest to lowest
+    for (auto it = buyPrices.rbegin(); it != buyPrices.rend(); ++it){
+        long int price = *it;
+        updatedSpread.lowestAsk = price;
+
+        // Iterate through orders, oldest to newest
+        int ordIdx = 0;
+        
+        // TODO
     }
 
 
@@ -190,14 +206,18 @@ void Matcher::removeLimits(Side side, std::map<long int, std::set<int>>& limitsT
                 if (buyLimits[price].size() == 0){
                     buyPrices.erase(price);
                 }
+
+                break;
             }
             case SELL : {
                 removeIdxs(sellLimits[price], limitsToRemove[price]);
 
                 // If there are no order at this price, remove them from the set of prices
                 if(sellLimits[price].size() == 0){
-                    buyPrices.erase(price);
+                    sellPrices.erase(price);
                 }
+
+                break;
             };
         }
     }
@@ -206,17 +226,17 @@ void Matcher::removeLimits(Side side, std::map<long int, std::set<int>>& limitsT
 /// @brief Remove provided elements from an Order vec
 /// @param vec 
 /// @param idxToRemove 
-void removeIdxs(std::vector<Order>& vec, const std::set<int>& idxToRemove){
+void removeIdxs(std::vector<Order>& orderVec, const std::set<int>& idxToRemove){
     
-    // shift orders to keep over the ones to be removed.
+    // elements to keep are moved from the read iterator to the write iterator.
     size_t write = 0;
-    for (size_t read = 0; read < vec.size(); ++read) {
-        if (!(idxToRemove.find(read) == idxToRemove.end())) {
-            vec[write++] = std::move(vec[read]);
+    for (size_t read = 0; read < orderVec.size(); ++read) {
+        if (idxToRemove.find(read) == idxToRemove.end()) {
+            orderVec[write++] = std::move(orderVec[read]);
         }
     }
 
     // at this point, there is a tail of garbage at the end of the vector.
     // resize to remove it.
-    vec.resize(write);
+    orderVec.resize(write);
 }
