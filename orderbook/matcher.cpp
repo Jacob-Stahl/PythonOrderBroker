@@ -42,7 +42,7 @@ void Matcher::addOrder(const Order& order)
     }
     lastOrderTimestamp = order.timestamp;
 
-    this->notifier.notifyOrderPlaced(order);
+    this->notifier->notifyOrderPlaced(order);
     matchOrders();
 };
 
@@ -51,7 +51,7 @@ bool Matcher::validateOrder(const Order& order){
     // Prevents old orders from being added after new ones.
     if(order.timestamp < lastOrderTimestamp)
     {
-        this->notifier.notifyOrderPlacementFailed(order, 
+        this->notifier->notifyOrderPlacementFailed(order, 
             "Can't add order with a timestamp older than the last added order");
         return false;
     }
@@ -63,14 +63,14 @@ bool Matcher::validateOrder(const Order& order){
         {
             case SELL:
                 if(order.stopPrice < order.price){
-                    this->notifier.notifyOrderPlacementFailed(order, 
+                    this->notifier->notifyOrderPlacementFailed(order, 
                         "Stop-Limit SELL can't have a stop price below the limit price");
                     return false;
                 }
                 break;
             case BUY:
                 if(order.stopPrice > order.price){
-                    this->notifier.notifyOrderPlacementFailed(order, 
+                    this->notifier->notifyOrderPlacementFailed(order, 
                         "Stop-Limit BUY can't have a stop price above the limit price");
                     return false;
                 }
@@ -146,7 +146,7 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
                 order.fill = order.fill + fillThisMatch;
                 
                 Match match = Match(order, limitOrd, fillThisMatch);
-                notifier.notifyOrderMatched(match);
+                this->notifier->notifyOrderMatched(match);
                 limitsToRemove[price].insert(ordIdx);
             }
             // Market order can be completely filled
@@ -157,7 +157,7 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
                 order.fill = order.qty;
 
                 Match match = Match(order, limitOrd, fillThisMatch);
-                notifier.notifyOrderMatched(match);
+                this->notifier->notifyOrderMatched(match);
                 
                 // Limit isn't completely filled, leave it in the book
                 marketOrderFilled = true;
