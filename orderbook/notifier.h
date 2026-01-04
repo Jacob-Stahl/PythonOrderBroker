@@ -11,7 +11,7 @@ class INotifier{
         virtual void notifyOrderMatched(const Match& match);
 };
 
-/// @brief Notifier used for testing. Records events in vectors that can be inspected
+/// @brief Notifier used for testing. Events are stored internally for inspection later
 class MockNotifier: public INotifier{
     public:
         std::vector<Order> placedOrders;
