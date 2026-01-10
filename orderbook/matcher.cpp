@@ -189,34 +189,32 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
 }
 
 
-OrdType Matcher::matchOrders(Order& market, Order& limit){
-    long int limUnFill = limit.unfilled();
-    long int markUnFill = market.unfilled();
+OrdType Matcher::matchOrders(Order& marketOrd, Order& limitOrd){
+    long int limUnFill = limitOrd.unfilled();
+    long int markUnFill = marketOrd.unfilled();
+    long int fillThisMatch = 0;
 
     // Limit order can be completely filled
     if(limUnFill <= markUnFill)
     {
-        long int fillThisMatch = limUnFill;
-
-        limit.fill = limit.qty;
-        market.fill = market.fill + fillThisMatch;
-
-        Match match = Match(market, limit, fillThisMatch);
-        this->notifier->notifyOrderMatched(match);
+        fillThisMatch = limUnFill;
+        limitOrd.fill = limitOrd.qty;
+        marketOrd.fill = marketOrd.fill + fillThisMatch;
     }
     // Market order can be completely filled
     else if (limUnFill >= markUnFill)
     {
-        long int fillThisMatch = markUnFill;
-        limit.fill = limit.fill + fillThisMatch;
-        market.fill = market.qty;
-
-        Match match = Match(market, limit, fillThisMatch);
-        this->notifier->notifyOrderMatched(match);
+        fillThisMatch = markUnFill;
+        limitOrd.fill = limitOrd.fill + fillThisMatch;
+        marketOrd.fill = marketOrd.qty;
     }
     else{
         throw std::logic_error("Could not match market and limit order!");
     }
+
+    Match match = Match(marketOrd, limitOrd, fillThisMatch);
+    this->notifier->notifyOrderMatched(match);
+
 }
 
 void Matcher::removeLimits(Side side, std::map<long int, std::set<int>>& limitsToRemove){ 
@@ -250,17 +248,17 @@ void Matcher::removeLimits(Side side, std::map<long int, std::set<int>>& limitsT
 /// @brief Remove provided elements from an Order vec
 /// @param vec 
 /// @param idxToRemove 
-void removeIdxs(std::vector<Order>& orderVec, const std::set<int>& idxToRemove){
+void removeIdxs(std::vector<Order>& orders, const std::set<int>& idxToRemove){
     
     // elements to keep are moved from the read iterator to the write iterator.
     size_t write = 0;
-    for (size_t read = 0; read < orderVec.size(); ++read) {
+    for (size_t read = 0; read < orders.size(); ++read) {
         if (idxToRemove.find(read) == idxToRemove.end()) {
-            orderVec[write++] = std::move(orderVec[read]);
+            orders[write++] = std::move(orders[read]);
         }
     }
 
     // at this point, there is a tail of garbage at the end of the vector.
     // resize to remove it.
-    orderVec.resize(write);
+    orders.resize(write);
 }
