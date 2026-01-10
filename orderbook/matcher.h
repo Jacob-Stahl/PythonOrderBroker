@@ -9,7 +9,6 @@
 #include <map>
 #include <stdexcept>
 
-
 /// @brief Processes orders for a single symbol
 class Matcher{
 
@@ -46,6 +45,13 @@ class Matcher{
         /// @param initialSpread
         /// @return true if filled completely
         bool tryFillSellMarket(Order& order, Spread& initialSpread);
+
+        /// @brief Matches a market order an a limit. returns the type that was completely filled
+        /// @param market 
+        /// @param limit 
+        /// @return 
+        OrdType matchOrders(Order& market, Order& limit);
+
 
         Matcher() = default;
     public:

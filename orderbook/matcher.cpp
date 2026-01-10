@@ -117,7 +117,7 @@ void Matcher::matchOrders()
     removeIdxs(marketOrders, marketOrdersToRemove);
 };
 
-bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
+bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
     // price and order index to remove in sell limits. sellLimits[price][order idx]
     std::map<long int, std::set<int>> limitsToRemove;
     bool marketOrderFilled = false;
@@ -133,38 +133,14 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
             if(!limitOrd.treatAsLimit(updatedSpread)){
                 continue;
             }
-            long int limUnFill = limitOrd.unfilled();
-            long int markUnFill = order.unfilled();
+            
+            auto typeFilled = matchOrders(marketOrd, limitOrd);
 
-            // Limit order can be completely filled
-            if(limUnFill <= markUnFill)
-            {
-                long int fillThisMatch = limUnFill;
-
-                // TODO: does this update the order in the book?
-                limitOrd.fill = limitOrd.qty;
-                order.fill = order.fill + fillThisMatch;
-                
-                Match match = Match(order, limitOrd, fillThisMatch);
-                this->notifier->notifyOrderMatched(match);
-                limitsToRemove[price].insert(ordIdx);
-            }
-            // Market order can be completely filled
-            else if (limUnFill >= markUnFill)
-            {
-                long int fillThisMatch = markUnFill;
-                limitOrd.fill = limitOrd.fill + fillThisMatch;
-                order.fill = order.qty;
-
-                Match match = Match(order, limitOrd, fillThisMatch);
-                this->notifier->notifyOrderMatched(match);
-                
-                // Limit isn't completely filled, leave it in the book
-                marketOrderFilled = true;
-            }
-
-            if (marketOrderFilled){
+            if (typeFilled == MARKET){
                 goto cleanUpAndExit;
+            }
+            else{ // Limit filled
+                limitsToRemove[price].insert(ordIdx);
             }
             ordIdx++;
         };
@@ -174,7 +150,7 @@ bool Matcher::tryFillBuyMarket(Order& order, Spread& initialSpread){
     return marketOrderFilled;
 }
 
-bool Matcher::tryFillSellMarket(Order& order, Spread& initialSpread){
+bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
     // price and order index to remove in sell limits. sellLimits[price][order idx]
     std::map<long int, std::set<int>> limitsToRemove;
     bool marketOrderFilled = false;
@@ -188,11 +164,59 @@ bool Matcher::tryFillSellMarket(Order& order, Spread& initialSpread){
         // Iterate through orders, oldest to newest
         int ordIdx = 0;
         
-        // TODO
+        for(Order& limitOrd : buyLimits[price]){
+            if(!limitOrd.treatAsLimit(updatedSpread)){
+                continue;
+            }
+
+            auto typeFilled = matchOrders(marketOrd, limitOrd);
+
+            if (typeFilled == MARKET){
+                goto cleanUpAndExit;
+            }
+            else{ // Limit filled
+                limitsToRemove[price].insert(ordIdx);
+            }
+            ordIdx++;
+        }
+
+        cleanUpAndExit:
+
+        removeLimits(BUY, limitsToRemove);
+        return marketOrderFilled; 
     }
-
-
     return false;
+}
+
+
+OrdType Matcher::matchOrders(Order& market, Order& limit){
+    long int limUnFill = limit.unfilled();
+    long int markUnFill = market.unfilled();
+
+    // Limit order can be completely filled
+    if(limUnFill <= markUnFill)
+    {
+        long int fillThisMatch = limUnFill;
+
+        limit.fill = limit.qty;
+        market.fill = market.fill + fillThisMatch;
+
+        Match match = Match(market, limit, fillThisMatch);
+        this->notifier->notifyOrderMatched(match);
+    }
+    // Market order can be completely filled
+    else if (limUnFill >= markUnFill)
+    {
+        long int fillThisMatch = markUnFill;
+        limit.fill = limit.fill + fillThisMatch;
+        market.fill = market.qty;
+
+        Match match = Match(market, limit, fillThisMatch);
+        this->notifier->notifyOrderMatched(match);
+    }
+    else{
+        throw std::logic_error("Could not match market and limit order!");
+    }
 }
 
 void Matcher::removeLimits(Side side, std::map<long int, std::set<int>>& limitsToRemove){ 
