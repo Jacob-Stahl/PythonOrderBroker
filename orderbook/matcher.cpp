@@ -48,7 +48,7 @@ void Matcher::addOrder(const Order& order)
 
 bool Matcher::validateOrder(const Order& order){
 
-    // Prevents old orders from being added after new ones.
+    // Prevent old orders from being added after new ones.
     if(order.timestamp < lastOrderTimestamp)
     {
         this->notifier->notifyOrderPlacementFailed(order, 
@@ -84,8 +84,8 @@ bool Matcher::validateOrder(const Order& order){
 void Matcher::matchOrders()
 {
     std::set<int> marketOrdersToRemove{};
-    for(int i = 0; i < marketOrders.size(); i++){
-        Order& order = marketOrders[i];
+    for(int ordIdx = 0; ordIdx < marketOrders.size(); ordIdx++){
+        Order& order = marketOrders[ordIdx];
         long int marketPrice;
         Spread spread = getSpread();
         
@@ -109,7 +109,7 @@ void Matcher::matchOrders()
         }
         
         if(filled){
-            marketOrdersToRemove.insert(i);
+            marketOrdersToRemove.insert(ordIdx);
         }
     }
 
