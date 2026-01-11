@@ -143,7 +143,7 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
     // Iterate through buy limit price buckets, highest to lowest
     for (auto it = buyPrices.rbegin(); it != buyPrices.rend(); ++it){
         long int price = *it;
-        updatedSpread.lowestAsk = price;
+        updatedSpread.highestBid = price;
 
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimits[price]);
         if(marketOrderFilled){
@@ -156,14 +156,13 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
 bool Matcher::matchLimits(Order& marketOrd, const Spread& spread, 
     std::vector<Order>& limitOrds){ 
     std::set<int> limitsToRemove;
-    int ordIdx = 0;
-    
-    for(Order& limitOrd : limitOrds){
-        if(!limitOrd.treatAsLimit(spread)){
+
+    for(int ordIdx = 0; ordIdx < limitOrds.size(); ordIdx++){
+        if(!limitOrds[ordIdx].treatAsLimit(spread)){
             continue;
         }
 
-        auto typeFilled = matchMarketAndLimit(marketOrd, limitOrd);
+        auto typeFilled = matchMarketAndLimit(marketOrd, limitOrds[ordIdx]);
         if (typeFilled == MARKET){
             removeIdxs(limitOrds, limitsToRemove);
             return true;
@@ -171,7 +170,6 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
         else{ // Limit filled
             limitsToRemove.insert(ordIdx);
         }
-        ordIdx++;
     }
 
     removeIdxs(limitOrds, limitsToRemove);
@@ -182,6 +180,7 @@ OrdType Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
     long int limUnFill = limitOrd.unfilled();
     long int markUnFill = marketOrd.unfilled();
     long int fillThisMatch = 0;
+    OrdType filled;
 
     // Limit order can be completely filled
     if(limUnFill <= markUnFill)
@@ -189,6 +188,7 @@ OrdType Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
         fillThisMatch = limUnFill;
         limitOrd.fill = limitOrd.qty;
         marketOrd.fill = marketOrd.fill + fillThisMatch;
+        filled = LIMIT;
     }
     // Market order can be completely filled
     else if (limUnFill >= markUnFill)
@@ -196,13 +196,17 @@ OrdType Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
         fillThisMatch = markUnFill;
         limitOrd.fill = limitOrd.fill + fillThisMatch;
         marketOrd.fill = marketOrd.qty;
+        filled = MARKET;
     }
+
+    // TODO what if they are BOTH filled? consider orders of equal unfilled size
     else{
         throw std::logic_error("Could not match market and limit order!");
     }
 
     Match match = Match(marketOrd, limitOrd, fillThisMatch);
     this->notifier->notifyOrderMatched(match);
+    return filled;
 }
 
 /// @brief Remove provided elements from an Order vec
