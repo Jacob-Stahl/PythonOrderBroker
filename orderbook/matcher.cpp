@@ -108,7 +108,6 @@ void Matcher::matchOrders()
             }
         }
         
-
         if(filled){
             marketOrdersToRemove.insert(i);
         }
@@ -127,27 +126,12 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
     for (long int price : sellPrices){
         updatedSpread.lowestAsk = price;
 
-        // Iterate through orders, oldest to newest
-        int ordIdx = 0;
-        for(Order& limitOrd : sellLimits[price]){
-            if(!limitOrd.treatAsLimit(updatedSpread)){
-                continue;
-            }
-            
-            auto typeFilled = matchOrders(marketOrd, limitOrd);
-
-            if (typeFilled == MARKET){
-                goto cleanUpAndExit;
-            }
-            else{ // Limit filled
-                limitsToRemove[price].insert(ordIdx);
-            }
-            ordIdx++;
-        };
+        marketOrderFilled = matchLimits(marketOrd, updatedSpread, sellLimits[price]);
+        if(marketOrderFilled){
+            return true;
+        }
     }
-    cleanUpAndExit:
-    removeLimits(SELL, limitsToRemove);
-    return marketOrderFilled;
+    return false;
 }
 
 bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
@@ -161,35 +145,40 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
         long int price = *it;
         updatedSpread.lowestAsk = price;
 
-        // Iterate through orders, oldest to newest
-        int ordIdx = 0;
-        
-        for(Order& limitOrd : buyLimits[price]){
-            if(!limitOrd.treatAsLimit(updatedSpread)){
-                continue;
-            }
-
-            auto typeFilled = matchOrders(marketOrd, limitOrd);
-
-            if (typeFilled == MARKET){
-                goto cleanUpAndExit;
-            }
-            else{ // Limit filled
-                limitsToRemove[price].insert(ordIdx);
-            }
-            ordIdx++;
+        marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimits[price]);
+        if(marketOrderFilled){
+            return true;
         }
-
-        cleanUpAndExit:
-
-        removeLimits(BUY, limitsToRemove);
-        return marketOrderFilled; 
     }
     return false;
 }
 
+bool Matcher::matchLimits(Order& marketOrd, const Spread& spread, 
+    std::vector<Order>& limitOrds){ 
+    std::set<int> limitsToRemove;
+    int ordIdx = 0;
+    
+    for(Order& limitOrd : limitOrds){
+        if(!limitOrd.treatAsLimit(spread)){
+            continue;
+        }
 
-OrdType Matcher::matchOrders(Order& marketOrd, Order& limitOrd){
+        auto typeFilled = matchMarketAndLimit(marketOrd, limitOrd);
+        if (typeFilled == MARKET){
+            removeIdxs(limitOrds, limitsToRemove);
+            return true;
+        }
+        else{ // Limit filled
+            limitsToRemove.insert(ordIdx);
+        }
+        ordIdx++;
+    }
+
+    removeIdxs(limitOrds, limitsToRemove);
+    return false;
+}
+
+OrdType Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
     long int limUnFill = limitOrd.unfilled();
     long int markUnFill = marketOrd.unfilled();
     long int fillThisMatch = 0;
@@ -214,35 +203,6 @@ OrdType Matcher::matchOrders(Order& marketOrd, Order& limitOrd){
 
     Match match = Match(marketOrd, limitOrd, fillThisMatch);
     this->notifier->notifyOrderMatched(match);
-
-}
-
-void Matcher::removeLimits(Side side, std::map<long int, std::set<int>>& limitsToRemove){ 
-    for(auto priceBucket : limitsToRemove){
-        int price = priceBucket.first;
-        switch(side){
-            case BUY : {
-                removeIdxs(buyLimits[price], limitsToRemove[price]);
-                
-                // If there are no order at this price, remove them from the set of prices
-                if (buyLimits[price].size() == 0){
-                    buyPrices.erase(price);
-                }
-
-                break;
-            }
-            case SELL : {
-                removeIdxs(sellLimits[price], limitsToRemove[price]);
-
-                // If there are no order at this price, remove them from the set of prices
-                if(sellLimits[price].size() == 0){
-                    sellPrices.erase(price);
-                }
-
-                break;
-            };
-        }
-    }
 }
 
 /// @brief Remove provided elements from an Order vec

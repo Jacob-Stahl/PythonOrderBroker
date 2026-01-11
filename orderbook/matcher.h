@@ -46,12 +46,19 @@ class Matcher{
         /// @return true if filled completely
         bool tryFillSellMarket(Order& order, Spread& initialSpread);
 
+        /// @brief Matches a market order with limits sorted from the oldest to newest
+        /// @param marketOrd 
+        /// @param limitOrds 
+        /// @return true if market order is filled
+        bool matchLimits(Order& marketOrd, const Spread& spread, 
+            std::vector<Order>& limitOrds);
+
+
         /// @brief Matches a market order an a limit. returns the type that was completely filled
         /// @param market 
         /// @param limit 
         /// @return 
-        OrdType matchOrders(Order& market, Order& limit);
-
+        OrdType matchMarketAndLimit(Order& market, Order& limit);
 
         Matcher() = default;
     public:
@@ -64,10 +71,6 @@ class Matcher{
         void addOrder(const Order& order);
 
         Spread getSpread();
-
-        void removeLimits(
-            Side side,
-            std::map<long int, std::set<int>>& limitsToRemove);
 };
 
 
