@@ -21,7 +21,6 @@ enum OrdType{
 
     /// @brief matched with the best market on the book, above/below a desired price threshold
     STOPLIMIT = 4
-
 };
 
 enum Side {

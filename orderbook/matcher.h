@@ -9,6 +9,17 @@
 #include <map>
 #include <stdexcept>
 
+struct TypeFilled{
+    bool market = false;
+    bool limit = false;
+
+    public:
+        void both(){
+            market = true;
+            limit = true;
+        }
+};
+
 /// @brief Processes orders for a single symbol
 class Matcher{
 
@@ -58,7 +69,7 @@ class Matcher{
         /// @param market 
         /// @param limit 
         /// @return 
-        OrdType matchMarketAndLimit(Order& market, Order& limit);
+        TypeFilled matchMarketAndLimit(Order& market, Order& limit);
 
         Matcher() = default;
     public:
@@ -73,5 +84,7 @@ class Matcher{
         Spread getSpread();
 };
 
-
-void removeIdxs(std::vector<Order>& orderVec, const std::set<int>& idxToRemove);
+/// @brief Remove provided elements from an Order vec
+/// @param orders
+/// @param idxToRemove 
+void removeIdxs(std::vector<Order>& orders, const std::set<int>& idxToRemove);
