@@ -11,7 +11,13 @@
 
 // TODO: handle edge cases where there are no limits on one side of the book
 Spread Matcher::getSpread(){
-    return Spread{*buyPrices.rbegin(), *sellPrices.rend()};
+
+    long int bid = *buyPrices.rbegin();
+    bool bidsMissing = buyPrices.rbegin() == buyPrices.rend();
+    long int ask = *sellPrices.rend();
+    bool asksMissing = sellPrices.rbegin() == sellPrices.rend();
+
+    return Spread{bidsMissing, asksMissing, bid, ask};
 }
 
 void Matcher::addOrder(const Order& order)

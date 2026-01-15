@@ -3,6 +3,9 @@
 #include <string>
 
 struct Spread{
+    bool bidMissing = true;
+    bool askMissing = true;
+
     long int highestBid;
     long int lowestAsk;
 };
