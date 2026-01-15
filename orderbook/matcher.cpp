@@ -104,10 +104,18 @@ void Matcher::matchOrders()
 
         switch(order.side){
             case(BUY) : {
+                // No sell limits on the book to match with
+                if(spread.asksMissing){ break; }
+
+                // Try to match with limits on the book
                 filled = tryFillBuyMarket(order, spread);
                 break;
             }
             case(SELL) : {
+                // No buy limits on the book to match with
+                if(spread.bidsMissing){ break; }
+
+                // try to match with limits on the book
                 filled = tryFillSellMarket(order, spread);
                 break;
             }
@@ -219,7 +227,6 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
     this->notifier->notifyOrderMatched(match);
     return typeFilled;
 }
-
 
 void removeIdxs(std::vector<Order>& orders, const std::set<int>& idxToRemove){
     

@@ -3,8 +3,8 @@
 #include <string>
 
 struct Spread{
-    bool bidMissing = true;
-    bool askMissing = true;
+    bool bidsMissing = true;
+    bool asksMissing = true;
 
     long int highestBid;
     long int lowestAsk;
