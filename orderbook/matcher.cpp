@@ -8,8 +8,6 @@
 #include <string_view>
 #include <format>
 
-
-// TODO: handle edge cases where there are no limits on one side of the book
 Spread Matcher::getSpread(){
 
     long int bid = *buyPrices.rbegin();
