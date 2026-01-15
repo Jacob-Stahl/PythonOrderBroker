@@ -34,12 +34,13 @@ class Matcher{
         std::set<long int> sellPrices;
         std::set<long int> buyPrices;
 
-        // Market AND stop orders. TODO find a better name for this
         std::vector<Order> marketOrders;
         
         INotifier* notifier;
 
         bool validateOrder(const Order& order);
+
+        void pushBackLimitOrder(const Order& order);
 
         /// @brief Try to find matches for all orders on the book
         /// @param lastOrderTimestamp 

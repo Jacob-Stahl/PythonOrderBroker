@@ -29,17 +29,7 @@ void Matcher::addOrder(const Order& order)
 
     if(order.type == LIMIT || order.type == STOPLIMIT)
     {
-        switch(order.side)
-        {
-            case SELL:
-                this->sellLimits[order.price].push_back(order);
-                this->sellPrices.insert(order.price);
-                break;
-            case BUY:
-                this->buyLimits[order.price].push_back(order);
-                this->buyPrices.insert(order.price);
-                break;
-        }
+        pushBackLimitOrder(order);
     }
     else if (order.type == MARKET || order.type == STOP)
     {
@@ -50,6 +40,22 @@ void Matcher::addOrder(const Order& order)
     this->notifier->notifyOrderPlaced(order);
     matchOrders();
 };
+
+void Matcher::pushBackLimitOrder(const Order& order){
+                // TODO handle case where there order.price is missing from map
+    
+    switch(order.side)
+    {
+        case SELL:
+            this->sellLimits[order.price].push_back(order);
+            this->sellPrices.insert(order.price);
+            break;
+        case BUY:
+            this->buyLimits[order.price].push_back(order);
+            this->buyPrices.insert(order.price);
+            break;
+    }
+}
 
 bool Matcher::validateOrder(const Order& order){
 
