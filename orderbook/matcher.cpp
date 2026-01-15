@@ -42,17 +42,23 @@ void Matcher::addOrder(const Order& order)
 };
 
 void Matcher::pushBackLimitOrder(const Order& order){
-                // TODO handle case where there order.price is missing from map
-    
     switch(order.side)
     {
         case SELL:
+            bool newLimitPrice = sellLimits.find(order.price) == sellLimits.end();
+            if(newLimitPrice){
+                this->sellPrices.insert(order.price);
+                this->sellLimits[order.price] = std::vector<Order>();
+            }
             this->sellLimits[order.price].push_back(order);
-            this->sellPrices.insert(order.price);
             break;
         case BUY:
+            bool newLimitPrice = buyLimits.find(order.price) == buyLimits.end();
+            if(newLimitPrice){
+                this->buyPrices.insert(order.price);
+                this->buyLimits[order.price] = std::vector<Order>();
+            }
             this->buyLimits[order.price].push_back(order);
-            this->buyPrices.insert(order.price);
             break;
     }
 }
