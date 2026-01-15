@@ -11,7 +11,8 @@ class Match{
     public:
         Match(const Order& buyer, const Order& seller, long int qty)
         {
-            // TODO add guards order sides.
+            if (buyer.side != BUY) { throw std::logic_error("buyer must have side BUY!");}
+            if (seller.side != SELL) { throw std::logic_error("seller must have side SELL!");}
 
             this->buyer = buyer;
             this->seller = seller;
