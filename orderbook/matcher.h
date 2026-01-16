@@ -35,8 +35,6 @@ class Matcher{
         std::set<long int> buyPrices;
 
         std::vector<Order> marketOrders;
-        
-        INotifier* notifier;
 
         bool validateOrder(const Order& order);
 
@@ -74,6 +72,8 @@ class Matcher{
 
         Matcher() = default;
     public:
+        INotifier* notifier;
+
         Matcher(INotifier* notif): notifier(notif){
             Matcher();
         }

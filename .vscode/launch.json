@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "LLDB: Debug single gtest",
+      "type": "lldb-dap",
+      "request": "launch",
+      "program": "${workspaceFolder}/orderbook/build/test_orderbook",
+      "args": ["--gtest_filter=${input:testFilter}"],
+      "cwd": "${workspaceFolder}/orderbook/build",
+      "stopOnEntry": false
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testFilter",
+      "type": "promptString",
+      "description": "GTest filter (e.g. MatcherTest.AddSellLimit_PopulatesAsk)"
+    }
+  ]
+}

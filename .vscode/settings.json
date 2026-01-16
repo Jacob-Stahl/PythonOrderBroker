@@ -2,13 +2,21 @@
   "testMate.cpp.test.executables": "orderbook/build/**/*test*",
   "testMate.cpp.test.workingDirectory": "${workspaceFolder}/orderbook/build",
   "testMate.cpp.discovery.loadOnStartup": true,
-  "testMate.cpp.discovery.strictPattern": false
-}
-{
-    "python.testing.pytestArgs": [
-        "tests"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "cmake.sourceDirectory": "/Users/jacobstahl/Desktop/Code/PythonOrderBroker/orderbook"
+  "testMate.cpp.discovery.strictPattern": false,
+
+  "testMate.cpp.debug.configTemplate": {
+    "name": "Debug test (lldb)",
+    "type": "lldb-dap",
+    "request": "launch",
+    "program": "${execPath}",
+    "args": ["--gtest_filter=${testFullName}"],
+    "cwd": "${workspaceFolder}/orderbook/build"
+  },
+
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "cmake.sourceDirectory": "/Users/jacobstahl/Desktop/Code/PythonOrderBroker/orderbook"
 }

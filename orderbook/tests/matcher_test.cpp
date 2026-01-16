@@ -43,6 +43,11 @@ TEST_F(MatcherTest, AddSellLimit_PopulatesAsk)
     matcher.addOrder(sell);
     auto spread = matcher.getSpread();
     EXPECT_FALSE(spread.asksMissing);
+    EXPECT_EQ(sell.price, spread.lowestAsk);
+    EXPECT_TRUE(spread.bidsMissing);
+    
+    EXPECT_EQ(1, notifier.placedOrders.size());
+    EXPECT_EQ(sell.ordId, notifier.placedOrders[0].ordId);
 }
 
 TEST_F(MatcherTest, AddBuyLimit_PopulatesBid)
@@ -51,4 +56,9 @@ TEST_F(MatcherTest, AddBuyLimit_PopulatesBid)
     matcher.addOrder(buy);
     auto spread = matcher.getSpread();
     EXPECT_FALSE(spread.bidsMissing);
+    EXPECT_EQ(buy.price, spread.highestBid);
+    EXPECT_TRUE(spread.asksMissing);
+
+    EXPECT_EQ(1, notifier.placedOrders.size());
+    EXPECT_EQ(buy.ordId, notifier.placedOrders[0].ordId);
 }
