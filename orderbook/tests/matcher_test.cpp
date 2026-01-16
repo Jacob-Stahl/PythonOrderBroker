@@ -37,8 +37,7 @@ struct MatcherTest : ::testing::Test {
     }
 };
 
-TEST_F(MatcherTest, AddSellLimit_PopulatesAsk)
-{
+TEST_F(MatcherTest, AddSellLimit_PopulatesAsk){
     auto sell = makeLimitOrder(1, 1, SELL, 10, 1000, 1);
     matcher.addOrder(sell);
     auto spread = matcher.getSpread();
@@ -48,10 +47,10 @@ TEST_F(MatcherTest, AddSellLimit_PopulatesAsk)
     
     EXPECT_EQ(1, notifier.placedOrders.size());
     EXPECT_EQ(sell.ordId, notifier.placedOrders[0].ordId);
+    EXPECT_EQ(LIMIT, notifier.placedOrders[0].type);
 }
 
-TEST_F(MatcherTest, AddBuyLimit_PopulatesBid)
-{
+TEST_F(MatcherTest, AddBuyLimit_PopulatesBid){
     auto buy = makeLimitOrder(2, 2, BUY, 5, 900, 2);
     matcher.addOrder(buy);
     auto spread = matcher.getSpread();
@@ -61,4 +60,43 @@ TEST_F(MatcherTest, AddBuyLimit_PopulatesBid)
 
     EXPECT_EQ(1, notifier.placedOrders.size());
     EXPECT_EQ(buy.ordId, notifier.placedOrders[0].ordId);
+    EXPECT_EQ(LIMIT, notifier.placedOrders[0].type);
+}
+
+TEST_F(MatcherTest, AddBuyMarket_PopulatesMarketOrders){
+    auto order = makeMarketOrder(1, 1, BUY, 5, 1);
+    matcher.addOrder(order);
+    auto spread = matcher.getSpread();
+    EXPECT_TRUE(spread.asksMissing && spread.bidsMissing);
+
+    EXPECT_EQ(1, notifier.placedOrders.size());
+    EXPECT_EQ(order.ordId, notifier.placedOrders[0].ordId);
+    EXPECT_EQ(MARKET, notifier.placedOrders[0].type);
+    EXPECT_EQ(BUY, notifier.placedOrders[0].side);
+}
+
+TEST_F(MatcherTest, AddSellMarket_PopulatesMarketOrders){
+    auto order = makeMarketOrder(1, 1, SELL, 5, 1);
+    matcher.addOrder(order);
+    auto spread = matcher.getSpread();
+    EXPECT_TRUE(spread.asksMissing && spread.bidsMissing);
+
+    EXPECT_EQ(1, notifier.placedOrders.size());
+    EXPECT_EQ(order.ordId, notifier.placedOrders[0].ordId);
+    EXPECT_EQ(MARKET, notifier.placedOrders[0].type);
+    EXPECT_EQ(SELL, notifier.placedOrders[0].side);
+}
+
+TEST_F(MatcherTest, BuyLimit_Match_SellMarket){
+    auto ask = makeMarketOrder(1, 1, SELL, 5, 1);
+    auto bid = makeLimitOrder(2, 2, BUY, 5, 250, 1);
+    matcher.addOrder(bid);
+    matcher.addOrder(ask);
+    auto spread = matcher.getSpread();
+
+    EXPECT_EQ(2, notifier.placedOrders.size());
+    EXPECT_EQ(1, notifier.matches.size());
+
+    EXPECT_TRUE(spread.asksMissing && spread.bidsMissing);
+
 }

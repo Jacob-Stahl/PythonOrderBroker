@@ -144,8 +144,8 @@ void Matcher::matchOrders()
 };
 
 bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
-    // price and order index to remove in sell limits. sellLimits[price][order idx]
-    std::map<long int, std::set<int>> limitsToRemove;
+
+    // TODO remove limit prices with 0 orders
     bool marketOrderFilled = false;
     Spread updatedSpread = initialSpread;
 
@@ -162,8 +162,8 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
 }
 
 bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
-    // price and order index to remove in sell limits. sellLimits[price][order idx]
-    std::map<long int, std::set<int>> limitsToRemove;
+    
+    // TODO remove limit prices with 0 orders
     bool marketOrderFilled = false;
     Spread updatedSpread = initialSpread;
 
@@ -173,6 +173,7 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
         updatedSpread.highestBid = price;
 
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimits[price]);
+
         if(marketOrderFilled){
             return true;
         }
@@ -203,7 +204,6 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
         }
     }
 
-    removeIdxs(limitOrds, limitsToRemove);
     return marketOrdFilled;
 }
 

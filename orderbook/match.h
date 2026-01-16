@@ -9,13 +9,18 @@ class Match{
     long int qty;
 
     public:
-        Match(const Order& buyer, const Order& seller, long int qty)
+        Match(const Order& ord1, const Order& ord2, long int qty)
         {
-            if (buyer.side != BUY) { throw std::logic_error("buyer must have side BUY!");}
-            if (seller.side != SELL) { throw std::logic_error("seller must have side SELL!");}
+            if (ord1.side == ord2.side) { std::logic_error("Can't match orders on the same side!"); }
+            if (ord1.side == BUY){
+                this->buyer = ord1;
+                this->seller = ord2;
+            }
+            else{
+                this->buyer = ord2;
+                this->seller = ord1;
+            }
 
-            this->buyer = buyer;
-            this->seller = seller;
             this->qty = qty;
         }
 
