@@ -215,6 +215,5 @@ mosquitto/*
 mosquitto_data/* 
 prometheus/*
 !prometheus/*prometheus.yml
-.vscode/*
 orderbook/main.dSYM/*
 orderbook/main

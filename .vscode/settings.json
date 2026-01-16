@@ -1,4 +1,10 @@
 {
+  "testMate.cpp.test.executables": "orderbook/build/**/*test*",
+  "testMate.cpp.test.workingDirectory": "${workspaceFolder}/orderbook/build",
+  "testMate.cpp.discovery.loadOnStartup": true,
+  "testMate.cpp.discovery.strictPattern": false
+}
+{
     "python.testing.pytestArgs": [
         "tests"
     ],
