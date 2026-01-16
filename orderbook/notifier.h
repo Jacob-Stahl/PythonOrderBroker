@@ -6,9 +6,9 @@
 
 class INotifier{
     public:
-        virtual void notifyOrderPlaced(const Order& order);
-        virtual void notifyOrderPlacementFailed(const Order& order, std::string reason);
-        virtual void notifyOrderMatched(const Match& match);
+    virtual void notifyOrderPlaced(const Order& order) = 0;
+    virtual void notifyOrderPlacementFailed(const Order& order, std::string reason) = 0;
+    virtual void notifyOrderMatched(const Match& match) = 0;
 };
 
 /// @brief Notifier used for testing. Events are stored internally for inspection later

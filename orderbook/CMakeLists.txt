@@ -1,29 +1,34 @@
-### Setup ###
 cmake_minimum_required(VERSION 3.14)
-# suppress annoyiing warnings from google test
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS 1 CACHE BOOL "No dev warnings")
+project(orderbook VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Sources for the orderbook library
+set(ORDERBOOK_SOURCES
+		order.cpp
+		matcher.cpp
+		notifier.cpp
+)
+
+add_library(orderbook STATIC ${ORDERBOOK_SOURCES})
+target_include_directories(orderbook PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(orderbook_app main.cpp)
+target_link_libraries(orderbook_app PRIVATE orderbook)
+
+enable_testing()
+
 include(FetchContent)
 FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+	googletest
+	GIT_REPOSITORY https://github.com/google/googletest.git
+	GIT_TAG main
 )
 FetchContent_MakeAvailable(googletest)
 
-### Compile main application ###
-add_executable(orderbook main.cpp)
+file(GLOB TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp")
+add_executable(test_orderbook ${TEST_SOURCES})
+target_link_libraries(test_orderbook PRIVATE orderbook gtest_main)
+add_test(NAME orderbook_tests COMMAND test_orderbook)
 
-### UNIT TESTS WITH GOOGLE TEST###
-# https://google.github.io/googletest/quickstart-cmake.html
-enable_testing()
-add_executable(unittests tests/test_orderbook.cpp)
-
-target_link_libraries(
-  unittests
-  GTest::gtest_main
-)
-
-include(GoogleTest)
-gtest_discover_tests(unittests)

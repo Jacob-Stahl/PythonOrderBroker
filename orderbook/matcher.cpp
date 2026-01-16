@@ -42,10 +42,12 @@ void Matcher::addOrder(const Order& order)
 };
 
 void Matcher::pushBackLimitOrder(const Order& order){
+    bool newLimitPrice;
+    
     switch(order.side)
     {
         case SELL:
-            bool newLimitPrice = sellLimits.find(order.price) == sellLimits.end();
+            newLimitPrice = sellLimits.find(order.price) == sellLimits.end();
             if(newLimitPrice){
                 this->sellPrices.insert(order.price);
                 this->sellLimits[order.price] = std::vector<Order>();
@@ -53,7 +55,7 @@ void Matcher::pushBackLimitOrder(const Order& order){
             this->sellLimits[order.price].push_back(order);
             break;
         case BUY:
-            bool newLimitPrice = buyLimits.find(order.price) == buyLimits.end();
+            newLimitPrice = buyLimits.find(order.price) == buyLimits.end();
             if(newLimitPrice){
                 this->buyPrices.insert(order.price);
                 this->buyLimits[order.price] = std::vector<Order>();
