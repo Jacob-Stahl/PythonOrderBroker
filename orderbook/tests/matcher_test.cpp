@@ -25,7 +25,6 @@ struct MatcherTest : ::testing::Test {
         ++currentIdTimestamp;
         return o;
     }
-
 };
 
 TEST_F(MatcherTest, EmptyBook_EmptySpread){
@@ -152,6 +151,7 @@ TEST_F(MatcherTest, PlaceLimitsAndMarkets_MatchesAndSpreadAreCorrect){
     // Check Notifier
     EXPECT_EQ(orders.size(), notifier.placedOrders.size());
     EXPECT_EQ(4, notifier.matches.size());
+
     EXPECT_EQ(orders[1].ordId, notifier.matches[0].seller.ordId); // Market-Buys
     EXPECT_EQ(orders[4].ordId, notifier.matches[0].buyer.ordId);
     EXPECT_EQ(50, notifier.matches[0].qty);
@@ -175,20 +175,22 @@ TEST_F(MatcherTest, PlaceLimitsAndMarkets_MatchesAndSpreadAreCorrect){
 
 TEST_F(MatcherTest, PlaceStopLimitsAndStops_MatchesAndSpreadAreCorrect){
     std::vector<Order> orders = {
-        newOrder(BUY, STOPLIMIT, 420, 60, 70), // <- Irrational stop order will get rejected
+        newOrder(BUY, STOPLIMIT,  420, 60, 70), // <- Irrational stop order will get rejected
 
-        newOrder(BUY, STOPLIMIT, 100, 50, 45),  // <- Half full
-        newOrder(SELL, LIMIT, 100, 40),         // <- Filled completely
-        newOrder(BUY, LIMIT, 100, 35),          // <- Filled completely
-        newOrder(SELL, STOPLIMIT, 100, 30, 32), // <- Half full
+        newOrder(SELL, LIMIT,     100, 60),
+        newOrder(BUY, STOPLIMIT,  100, 50, 45),      // <- Filled completely
+        newOrder(SELL, LIMIT,     100, 40),          // <- Filled completely
+        
+        newOrder(BUY, LIMIT,      100, 35),          // <- Filled completely
+        newOrder(SELL, STOPLIMIT, 100, 30, 32),      // <- Filled completely
+        newOrder(BUY, LIMIT,      100, 15),
 
         newOrder(SELL, STOPLIMIT, 420, 30, 20), // <- Irrational stop order will get rejected
 
-        newOrder(SELL, STOP, 50, 0, 41), // <- Does nothing until market order below breaks through stop ceiling
-        newOrder(BUY, MARKET, 100),
-
-        newOrder(BUY, STOP, 50, 0, 41), // <- Does nothing until market order below breaks through stop floor
-        newOrder(SELL, MARKET, 100),
+        newOrder(BUY,  MARKET, 100), // Match SELL LIMIT
+        newOrder(SELL, MARKET, 100), // Match BUY  STOPLIMIT
+        newOrder(SELL, MARKET, 100), // Match BUY  LIMIT
+        newOrder(BUY,  MARKET, 100), // Match SELL STOPLIMIT
     };
 
     for(auto order : orders){
@@ -197,10 +199,20 @@ TEST_F(MatcherTest, PlaceStopLimitsAndStops_MatchesAndSpreadAreCorrect){
 
     // Check Notifier
     EXPECT_EQ(2, notifier.placementFailedOrders.size());
+    EXPECT_EQ(10, notifier.placedOrders.size());
+    EXPECT_EQ(4, notifier.matches.size());
+
+    EXPECT_EQ(orders[3].ordId, notifier.matches[0].seller.ordId); // Market-Buys
+    EXPECT_EQ(orders[6].ordId, notifier.matches[0].buyer.ordId);
+    EXPECT_EQ(100, notifier.matches[0].qty);
+    EXPECT_EQ(orders[1].ordId, notifier.matches[1].seller.ordId);
+    EXPECT_EQ(orders[6].ordId, notifier.matches[1].buyer.ordId);
+    EXPECT_EQ(50, notifier.matches[0].qty);
+
 
     // Check Spread
     auto spread = matcher.getSpread();
-    //EXPECT_FALSE(spread.asksMissing || spread.bidsMissing);
-    //EXPECT_EQ(12, spread.lowestAsk);
-    //EXPECT_EQ(5, spread.highestBid);
+    EXPECT_FALSE(spread.asksMissing || spread.bidsMissing);
+    EXPECT_EQ(30, spread.lowestAsk);
+    EXPECT_EQ(50, spread.highestBid);
 }
