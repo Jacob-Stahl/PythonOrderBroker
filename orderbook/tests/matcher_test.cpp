@@ -141,27 +141,44 @@ TEST_F(MatcherTest, PlaceLimits_SpreadIsCorrect){
 }
 
 
-TEST_F(MatcherTest, PlaceLimitsAndMarkets_SpreadIsCorrect){
+TEST_F(MatcherTest, PlaceLimitsAndMarkets_MatchesAndSpreadAreCorrect){
     std::vector<Order> orders = {
-        makeLimitOrder(1, 1, BUY, 100, 5, 1),
-        makeLimitOrder(2, 2, SELL, 100, 10, 2), // <- Market should remove this guy
-        makeLimitOrder(3, 3, BUY, 100, 6, 3),
+        makeLimitOrder(1, 1, BUY, 100, 5, 1), // <- Sell-Market should half fill this guy
+        makeLimitOrder(2, 2, SELL, 100, 10, 2), // <- Buy-Markets should fill this guy
+        makeLimitOrder(3, 3, BUY, 100, 6, 3),  // <- Sell-Market should completely fill this guy
         makeLimitOrder(4, 4, SELL, 100, 12, 4),
 
-        // Now place a market order
-        makeMarketOrder(5, 5, BUY, 100, 5)
+        // Now place market orders
+        makeMarketOrder(5, 5, BUY, 50, 5),
+        makeMarketOrder(6, 6, BUY, 50, 6),
+        makeMarketOrder(7, 7, SELL, 150, 7)
     };
 
     for(auto order : orders){
         matcher.addOrder(order);
     }
 
+    // Check Notifier
     EXPECT_EQ(orders.size(), notifier.placedOrders.size());
-    EXPECT_EQ(1, notifier.matches.size());
+    EXPECT_EQ(4, notifier.matches.size());
+    EXPECT_EQ(orders[1].ordId, notifier.matches[0].seller.ordId); // Market-Buys
+    EXPECT_EQ(orders[4].ordId, notifier.matches[0].buyer.ordId);
+    EXPECT_EQ(50, notifier.matches[0].qty);
+    EXPECT_EQ(orders[1].ordId, notifier.matches[1].seller.ordId);
+    EXPECT_EQ(orders[5].ordId, notifier.matches[1].buyer.ordId);
+    EXPECT_EQ(50, notifier.matches[1].qty);
 
+    EXPECT_EQ(orders[6].ordId, notifier.matches[2].seller.ordId); // Market-Sell
+    EXPECT_EQ(orders[2].ordId, notifier.matches[2].buyer.ordId);
+    EXPECT_EQ(100, notifier.matches[2].qty);
+    EXPECT_EQ(orders[6].ordId, notifier.matches[3].seller.ordId);
+    EXPECT_EQ(orders[0].ordId, notifier.matches[3].buyer.ordId);
+    EXPECT_EQ(50, notifier.matches[3].qty);
+
+
+    // Check Spread
     auto spread = matcher.getSpread();
     EXPECT_FALSE(spread.asksMissing || spread.bidsMissing);
     EXPECT_EQ(12, spread.lowestAsk);
-    EXPECT_EQ(6, spread.highestBid);
+    EXPECT_EQ(5, spread.highestBid);
 }
-

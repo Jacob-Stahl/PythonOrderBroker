@@ -3,7 +3,7 @@
 #include "order.h"
 
 // TODO time of match might be important for message ordering down stream
-class Match{
+struct Match{
     Order buyer;
     Order seller;
     long int qty;
@@ -23,7 +23,4 @@ class Match{
 
             this->qty = qty;
         }
-
-        // TODO use proper getters
-        long int getQty() {return qty;}
 };
