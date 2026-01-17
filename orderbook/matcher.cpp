@@ -129,22 +129,20 @@ void Matcher::matchOrders()
         bool filled = false;
 
         switch(order.side){
-            case(BUY) : {
+            case(BUY) :
                 // No sell limits on the book to match with
                 if(spread.asksMissing){ break; }
 
                 // Try to match with limits on the book
                 filled = tryFillBuyMarket(order, spread);
-                break;
-            }
-            case(SELL) : {
+                break;   
+            case(SELL) :
                 // No buy limits on the book to match with
                 if(spread.bidsMissing){ break; }
 
                 // try to match with limits on the book
                 filled = tryFillSellMarket(order, spread);
                 break;
-            }
         }
         
         if(filled){
@@ -199,7 +197,7 @@ void Matcher::removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Sid
     }
     
     switch(side){
-        case SELL:{
+        case SELL:
             for(auto price : limitPricesToRemove){
                 if(sellLimits[price].size()){
                     throw std::logic_error("Can't remove non-empty list of limits!");
@@ -208,8 +206,7 @@ void Matcher::removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Sid
                 sellPrices.erase(price);
             }
             break;
-        }
-        case BUY:{
+        case BUY:
             for(auto price : limitPricesToRemove){
                 if(buyLimits[price].size()){
                     throw std::logic_error("Can't remove non-empty list of limits!");
@@ -218,7 +215,6 @@ void Matcher::removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Sid
                 buyPrices.erase(price);
             }
             break;
-        }
     }
 }
 
