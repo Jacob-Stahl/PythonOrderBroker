@@ -22,6 +22,21 @@ struct MatcherTest : ::testing::Test {
         return o;
     }
 
+    Order makeStopLimitOrder(long traderId, long ordId, Side side, long qty, long price, long stopPrice, long timestamp){
+        Order o{};
+        o.traderId = traderId;
+        o.ordId = ordId;
+        o.side = side;
+        o.qty = qty;
+        o.price = price;
+        o.stopPrice = stopPrice;
+        o.symbol = "TEST";
+        o.type = LIMIT;
+        o.timestamp = timestamp;
+        return o;
+    }
+
+
     Order makeMarketOrder(long traderId, long ordId, Side side, long qty, long timestamp){
         Order o{};
         o.traderId = traderId;
@@ -35,6 +50,22 @@ struct MatcherTest : ::testing::Test {
         o.timestamp = timestamp;
         return o;
     }
+
+    Order makeStopOrder(long traderId, long ordId, Side side, long qty, long stopPrice, long timestamp){
+        Order o{};
+        o.traderId = traderId;
+        o.ordId = ordId;
+        o.side = side;
+        o.qty = qty;
+        o.price = 0;
+        o.stopPrice = stopPrice;
+        o.symbol = "TEST";
+        o.type = STOP;
+        o.timestamp = timestamp;
+        return o;
+    }
+
+
 };
 
 TEST_F(MatcherTest, EmptyBook_EmptySpread){
@@ -175,10 +206,28 @@ TEST_F(MatcherTest, PlaceLimitsAndMarkets_MatchesAndSpreadAreCorrect){
     EXPECT_EQ(orders[0].ordId, notifier.matches[3].buyer.ordId);
     EXPECT_EQ(50, notifier.matches[3].qty);
 
-
     // Check Spread
     auto spread = matcher.getSpread();
     EXPECT_FALSE(spread.asksMissing || spread.bidsMissing);
     EXPECT_EQ(12, spread.lowestAsk);
     EXPECT_EQ(5, spread.highestBid);
+}
+
+TEST_F(MatcherTest, PlaceStopLimitsAndStops_MatchesAndSpreadAreCorrect){
+    std::vector<Order> orders = {
+        
+    };
+
+    for(auto order : orders){
+        matcher.addOrder(order);
+    }
+
+    // Check Notifier
+
+
+    // Check Spread
+    auto spread = matcher.getSpread();
+    //EXPECT_FALSE(spread.asksMissing || spread.bidsMissing);
+    //EXPECT_EQ(12, spread.lowestAsk);
+    //EXPECT_EQ(5, spread.highestBid);
 }
