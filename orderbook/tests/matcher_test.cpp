@@ -8,6 +8,26 @@ struct MatcherTest : ::testing::Test {
     MockNotifier notifier;
     Matcher matcher{&notifier};
 
+    long int currentIdTimestamp = 1;
+
+    Order newOrder(Side side, OrdType type, long qty, long price = 0, long stopPrice = 0){
+        Order o{};
+        o.traderId = currentIdTimestamp;
+        o.ordId = currentIdTimestamp;
+        o.side = side;
+        o.qty = qty;
+        o.price = price;
+        o.stopPrice = stopPrice;
+        o.symbol = "TEST";
+        o.type = type;
+        o.timestamp = currentIdTimestamp;
+
+        ++currentIdTimestamp;
+        return o;
+    }
+
+    // TODO: Make order factory that simplifies all of these
+
     Order makeLimitOrder(long traderId, long ordId, Side side, long qty, long price, long timestamp){
         Order o{};
         o.traderId = traderId;
@@ -215,7 +235,10 @@ TEST_F(MatcherTest, PlaceLimitsAndMarkets_MatchesAndSpreadAreCorrect){
 
 TEST_F(MatcherTest, PlaceStopLimitsAndStops_MatchesAndSpreadAreCorrect){
     std::vector<Order> orders = {
-        
+        newOrder(BUY, STOPLIMIT, 100, 500, 450),
+        makeLimitOrder(    2, 2, SELL, 100, 400,      2),
+        makeLimitOrder(    3, 3, BUY,  100, 350,      3),
+        makeStopLimitOrder(4, 4, SELL, 100, 300, 325, 4),
     };
 
     for(auto order : orders){
