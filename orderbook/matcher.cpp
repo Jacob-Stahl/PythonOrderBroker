@@ -102,6 +102,10 @@ bool Matcher::validateOrder(const Order& order){
 
 void Matcher::matchOrders()
 {
+    if(marketOrders.size() == 0){
+        return; // Exit early if there are now market orders
+    }
+
     std::set<int> marketOrdersToRemove{};
     for(int ordIdx = 0; ordIdx < marketOrders.size(); ordIdx++){
         Order& order = marketOrders[ordIdx];
