@@ -38,7 +38,7 @@ struct MatcherTest : ::testing::Test {
 };
 
 TEST_F(MatcherTest, AddSellLimit_PopulatesAsk){
-    auto sell = makeLimitOrder(1, 1, SELL, 10, 1000, 1);
+    auto sell = makeLimitOrder(2, 2, SELL, 5, 900, 2);
     matcher.addOrder(sell);
     auto spread = matcher.getSpread();
     EXPECT_FALSE(spread.asksMissing);
