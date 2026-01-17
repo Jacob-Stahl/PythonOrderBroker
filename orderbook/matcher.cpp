@@ -10,11 +10,19 @@
 
 Spread Matcher::getSpread(){
 
-    long int bid = *buyPrices.rbegin();
-    bool bidsMissing = buyPrices.rbegin() == buyPrices.rend();
-    long int ask = *sellPrices.rend();
-    bool asksMissing = sellPrices.rbegin() == sellPrices.rend();
+    bool bidsMissing = buyPrices.end() == buyPrices.begin();
+    bool asksMissing = sellPrices.end() == sellPrices.begin();
 
+    long int bid;
+    if(!bidsMissing){
+        bid = *buyPrices.rbegin();
+    }
+
+    long int ask;
+    if(!asksMissing){
+        ask = *sellPrices.begin();
+    }
+    
     return Spread{bidsMissing, asksMissing, bid, ask};
 }
 

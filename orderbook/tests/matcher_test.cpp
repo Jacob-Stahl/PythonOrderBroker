@@ -37,6 +37,12 @@ struct MatcherTest : ::testing::Test {
     }
 };
 
+TEST_F(MatcherTest, EmptyBook_EmptySpread){
+    auto spread = matcher.getSpread();
+    EXPECT_TRUE(spread.asksMissing && spread.bidsMissing);
+}
+
+
 TEST_F(MatcherTest, AddSellLimit_PopulatesAsk){
     auto sell = makeLimitOrder(2, 2, SELL, 5, 900, 2);
     matcher.addOrder(sell);
