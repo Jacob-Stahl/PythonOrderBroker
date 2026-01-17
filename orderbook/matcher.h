@@ -56,6 +56,11 @@ class Matcher{
         /// @return true if filled completely
         bool tryFillSellMarket(Order& order, Spread& initialSpread);
 
+        /// @brief Remove limit orders from book at given price
+        /// @param limitPricesToRemove 
+        /// @param side 
+        void removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Side side);
+
         /// @brief Matches a market order with limits sorted from the oldest to newest
         /// @param marketOrd 
         /// @param limitOrds 

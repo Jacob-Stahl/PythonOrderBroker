@@ -144,34 +144,70 @@ void Matcher::matchOrders()
 };
 
 bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
-
-    // TODO remove limit prices with 0 orders
     bool marketOrderFilled = false;
     Spread updatedSpread = initialSpread;
+    std::vector<long int> limitPricesToRemove{};
 
     // Iterate through sell limit price buckets, lowest to highest
     for (long int price : sellPrices){
         updatedSpread.lowestAsk = price;
-
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, sellLimits[price]);
+        if(sellLimits[price].size() == 0){
+            limitPricesToRemove.push_back(price);
+        }
     }
+
+    removeLimitsByPrice(limitPricesToRemove, SELL);
     return marketOrderFilled;
 }
 
 bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
-    
-    // TODO remove limit prices with 0 orders
     bool marketOrderFilled = false;
     Spread updatedSpread = initialSpread;
+    std::vector<long int> limitPricesToRemove{};
 
     // Iterate through buy limit price buckets, highest to lowest
     for (auto it = buyPrices.rbegin(); it != buyPrices.rend(); ++it){
         long int price = *it;
         updatedSpread.highestBid = price;
-
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimits[price]);
+        if(buyLimits[price].size() == 0){
+            limitPricesToRemove.push_back(price);
+        }
     }
+
+    removeLimitsByPrice(limitPricesToRemove, BUY);
     return marketOrderFilled;
+}
+
+void Matcher::removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Side side){
+    
+    if(limitPricesToRemove.size() == 0){
+        return; // early return if there are no limit prices to remove
+    }
+    
+    switch(side){
+        case SELL:{
+            for(auto price : limitPricesToRemove){
+                if(sellLimits[price].size()){
+                    throw std::logic_error("Can't remove non-empty list of limits!");
+                }
+                sellLimits.erase(price);
+                sellPrices.erase(price);
+            }
+            break;
+        }
+        case BUY:{
+            for(auto price : limitPricesToRemove){
+                if(buyLimits[price].size()){
+                    throw std::logic_error("Can't remove non-empty list of limits!");
+                }
+                buyLimits.erase(price);
+                buyPrices.erase(price);
+            }
+            break;
+        }
+    }
 }
 
 bool Matcher::matchLimits(Order& marketOrd, const Spread& spread, 

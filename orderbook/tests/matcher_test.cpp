@@ -90,8 +90,8 @@ TEST_F(MatcherTest, AddSellMarket_PopulatesMarketOrders){
 TEST_F(MatcherTest, BuyLimit_Match_SellMarket){
     auto ask = makeMarketOrder(1, 1, SELL, 5, 1);
     auto bid = makeLimitOrder(2, 2, BUY, 5, 250, 2);
-    matcher.addOrder(bid);
     matcher.addOrder(ask);
+    matcher.addOrder(bid);
     auto spread = matcher.getSpread();
 
     EXPECT_EQ(2, notifier.placedOrders.size());
