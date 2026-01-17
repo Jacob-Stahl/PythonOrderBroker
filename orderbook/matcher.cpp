@@ -154,11 +154,8 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
         updatedSpread.lowestAsk = price;
 
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, sellLimits[price]);
-        if(marketOrderFilled){
-            return true;
-        }
     }
-    return false;
+    return marketOrderFilled;
 }
 
 bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
@@ -173,12 +170,8 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
         updatedSpread.highestBid = price;
 
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimits[price]);
-
-        if(marketOrderFilled){
-            return true;
-        }
     }
-    return false;
+    return marketOrderFilled;
 }
 
 bool Matcher::matchLimits(Order& marketOrd, const Spread& spread, 

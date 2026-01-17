@@ -89,7 +89,7 @@ TEST_F(MatcherTest, AddSellMarket_PopulatesMarketOrders){
 
 TEST_F(MatcherTest, BuyLimit_Match_SellMarket){
     auto ask = makeMarketOrder(1, 1, SELL, 5, 1);
-    auto bid = makeLimitOrder(2, 2, BUY, 5, 250, 1);
+    auto bid = makeLimitOrder(2, 2, BUY, 5, 250, 2);
     matcher.addOrder(bid);
     matcher.addOrder(ask);
     auto spread = matcher.getSpread();
@@ -98,5 +98,17 @@ TEST_F(MatcherTest, BuyLimit_Match_SellMarket){
     EXPECT_EQ(1, notifier.matches.size());
 
     EXPECT_TRUE(spread.asksMissing && spread.bidsMissing);
+}
 
+TEST_F(MatcherTest, SellLimit_Match_BuyMarket){
+    auto bid = makeMarketOrder(1, 1, BUY, 5, 1);
+    auto ask = makeLimitOrder(2, 2, SELL, 5, 250, 2);
+    matcher.addOrder(bid);
+    matcher.addOrder(ask);
+    auto spread = matcher.getSpread();
+
+    EXPECT_EQ(2, notifier.placedOrders.size());
+    EXPECT_EQ(1, notifier.matches.size());
+
+    EXPECT_TRUE(spread.asksMissing && spread.bidsMissing);
 }
