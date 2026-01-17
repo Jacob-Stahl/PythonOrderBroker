@@ -175,10 +175,20 @@ TEST_F(MatcherTest, PlaceLimitsAndMarkets_MatchesAndSpreadAreCorrect){
 
 TEST_F(MatcherTest, PlaceStopLimitsAndStops_MatchesAndSpreadAreCorrect){
     std::vector<Order> orders = {
-        newOrder(BUY, STOPLIMIT, 100, 50, 45),
-        newOrder(SELL, LIMIT, 100, 40),
-        newOrder(BUY, LIMIT, 100, 35),
-        newOrder(SELL, STOPLIMIT, 100, 30, 32),
+        newOrder(BUY, STOPLIMIT, 420, 60, 70), // <- Irrational stop order will get rejected
+
+        newOrder(BUY, STOPLIMIT, 100, 50, 45),  // <- Half full
+        newOrder(SELL, LIMIT, 100, 40),         // <- Filled completely
+        newOrder(BUY, LIMIT, 100, 35),          // <- Filled completely
+        newOrder(SELL, STOPLIMIT, 100, 30, 32), // <- Half full
+
+        newOrder(SELL, STOPLIMIT, 420, 30, 20), // <- Irrational stop order will get rejected
+
+        newOrder(SELL, STOP, 50, 0, 41), // <- Does nothing until market order below breaks through stop ceiling
+        newOrder(BUY, MARKET, 100),
+
+        newOrder(BUY, STOP, 50, 0, 41), // <- Does nothing until market order below breaks through stop floor
+        newOrder(SELL, MARKET, 100),
     };
 
     for(auto order : orders){
@@ -186,7 +196,7 @@ TEST_F(MatcherTest, PlaceStopLimitsAndStops_MatchesAndSpreadAreCorrect){
     }
 
     // Check Notifier
-
+    EXPECT_EQ(2, notifier.placementFailedOrders.size());
 
     // Check Spread
     auto spread = matcher.getSpread();
