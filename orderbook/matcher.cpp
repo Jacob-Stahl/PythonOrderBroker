@@ -165,6 +165,9 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
         if(sellLimits[price].size() == 0){
             limitPricesToRemove.push_back(price);
         }
+        if(marketOrderFilled){
+            break;
+        }
     }
 
     removeLimitsByPrice(limitPricesToRemove, SELL);
@@ -183,6 +186,9 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimits[price]);
         if(buyLimits[price].size() == 0){
             limitPricesToRemove.push_back(price);
+        }
+        if(marketOrderFilled){
+            break;
         }
     }
 
@@ -235,12 +241,12 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
         }
         
         if (typeFilled.market){
-            removeIdxs(limitOrds, limitsToRemove);
             marketOrdFilled = true;
             break;
         }
     }
 
+    removeIdxs(limitOrds, limitsToRemove);
     return marketOrdFilled;
 }
 
@@ -281,6 +287,8 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
 
 void removeIdxs(std::vector<Order>& orders, const std::set<int>& idxToRemove){
     
+    if(idxToRemove.size() == 0) { return; }
+
     // elements to keep are moved from the read iterator to the write iterator.
     size_t write = 0;
     for (size_t read = 0; read < orders.size(); ++read) {
