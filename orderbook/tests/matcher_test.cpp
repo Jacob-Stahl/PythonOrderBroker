@@ -118,3 +118,50 @@ TEST_F(MatcherTest, SellLimit_Match_BuyMarket){
 
     EXPECT_TRUE(spread.asksMissing && spread.bidsMissing);
 }
+
+TEST_F(MatcherTest, PlaceLimits_SpreadIsCorrect){
+    std::vector<Order> orders = {
+        makeLimitOrder(1, 1, BUY, 100, 5, 1),
+        makeLimitOrder(2, 2, SELL, 100, 10, 2),
+        makeLimitOrder(3, 3, BUY, 100, 6, 3),
+        makeLimitOrder(4, 4, SELL, 100, 12, 4)
+    };
+
+    for(auto order : orders){
+        matcher.addOrder(order);
+    }
+
+    EXPECT_EQ(orders.size(), notifier.placedOrders.size());
+    EXPECT_EQ(0, notifier.matches.size());
+
+    auto spread = matcher.getSpread();
+    EXPECT_FALSE(spread.asksMissing || spread.bidsMissing);
+    EXPECT_EQ(10, spread.lowestAsk);
+    EXPECT_EQ(6, spread.highestBid);
+}
+
+
+TEST_F(MatcherTest, PlaceLimitsAndMarkets_SpreadIsCorrect){
+    std::vector<Order> orders = {
+        makeLimitOrder(1, 1, BUY, 100, 5, 1),
+        makeLimitOrder(2, 2, SELL, 100, 10, 2), // <- Market should remove this guy
+        makeLimitOrder(3, 3, BUY, 100, 6, 3),
+        makeLimitOrder(4, 4, SELL, 100, 12, 4),
+
+        // Now place a market order
+        makeMarketOrder(5, 5, BUY, 100, 5)
+    };
+
+    for(auto order : orders){
+        matcher.addOrder(order);
+    }
+
+    EXPECT_EQ(orders.size(), notifier.placedOrders.size());
+    EXPECT_EQ(1, notifier.matches.size());
+
+    auto spread = matcher.getSpread();
+    EXPECT_FALSE(spread.asksMissing || spread.bidsMissing);
+    EXPECT_EQ(12, spread.lowestAsk);
+    EXPECT_EQ(6, spread.highestBid);
+}
+
