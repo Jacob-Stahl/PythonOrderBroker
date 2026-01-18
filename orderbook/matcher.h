@@ -87,6 +87,10 @@ class Matcher{
         /// @param order 
         void addOrder(const Order& order, bool thenMatch = true);
 
+        /// @brief Add all orders in the book to a vector provided by reference. They are NOT sorted by time.
+        /// @param orders 
+        void dumpOrdersTo(std::vector<Order>& orders);
+
         Spread getSpread();
 };
 

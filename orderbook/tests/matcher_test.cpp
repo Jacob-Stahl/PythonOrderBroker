@@ -247,3 +247,49 @@ TEST_F(MatcherTest, SellStop_TriggersAfterWittlingBuys){
 
     EXPECT_TRUE(stopExecuted);
 }
+
+TEST_F(MatcherTest, DumpOrdersTo_ExcludesCompletelyFilledOrders){
+    // Place a buy limit that will be completely filled
+    auto buyLimit1 = newOrder(BUY, LIMIT, 100, 10);
+    // Place a sell market that will match and remove the buy limit
+    auto sellMarket = newOrder(SELL, MARKET, 100);
+
+    // Place additional limits that should remain (one will be partially filled)
+    auto buyLimit2 = newOrder(BUY, LIMIT, 50, 5);
+    auto sellLimit = newOrder(SELL, LIMIT, 30, 15);
+
+    matcher.addOrder(buyLimit1);
+    matcher.addOrder(sellMarket); // consumes buyLimit1 entirely
+    matcher.addOrder(buyLimit2);
+    matcher.addOrder(sellLimit);
+
+    // Partially consume the sell limit (leaves it with remaining qty)
+    matcher.addOrder(newOrder(BUY, MARKET, 10));
+
+    // Dump remaining orders
+    std::vector<Order> dumped;
+    matcher.dumpOrdersTo(dumped);
+
+    bool foundBuyLimit1 = false;
+    bool foundSellMarket = false;
+    bool foundBuyLimit2 = false;
+    bool foundSellLimit = false;
+    for (auto &o : dumped){
+        if (o.ordId == buyLimit1.ordId) foundBuyLimit1 = true;
+        if (o.ordId == sellMarket.ordId) foundSellMarket = true;
+        if (o.ordId == buyLimit2.ordId) foundBuyLimit2 = true;
+        if (o.ordId == sellLimit.ordId){
+            foundSellLimit = true;
+            EXPECT_GT(o.fill, 0);    // it was partially filled
+            EXPECT_LT(o.fill, o.qty); // still has remaining qty
+        }
+    }
+
+    // Completely filled orders should NOT be present
+    EXPECT_FALSE(foundBuyLimit1);
+    EXPECT_FALSE(foundSellMarket);
+
+    // Partially filled / unfilled limits should be present
+    EXPECT_TRUE(foundBuyLimit2);
+    EXPECT_TRUE(foundSellLimit);
+}
