@@ -26,7 +26,7 @@ Spread Matcher::getSpread(){
     return Spread{bidsMissing, asksMissing, bid, ask};
 }
 
-void Matcher::addOrder(const Order& order)
+void Matcher::addOrder(const Order& order, bool thenMatch)
 {   
     // TODO mutex that locks the book until orders are added, and matched
 
@@ -50,7 +50,10 @@ void Matcher::addOrder(const Order& order)
 
     lastOrderTimestamp = order.timestamp;
     this->notifier->notifyOrderPlaced(order);
-    matchOrders();
+
+    if(thenMatch){
+        matchOrders();
+    }
 };
 
 void Matcher::pushBackLimitOrder(const Order& order){

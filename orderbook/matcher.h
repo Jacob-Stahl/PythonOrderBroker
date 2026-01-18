@@ -85,7 +85,7 @@ class Matcher{
 
         /// @brief Add order to the book
         /// @param order 
-        void addOrder(const Order& order);
+        void addOrder(const Order& order, bool thenMatch = true);
 
         Spread getSpread();
 };
