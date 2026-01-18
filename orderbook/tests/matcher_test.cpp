@@ -214,3 +214,36 @@ TEST_F(MatcherTest, MatchStopLimits_MatchesAndSpreadAreCorrect){
     EXPECT_TRUE(spread.bidsMissing);
 
 }
+
+TEST_F(MatcherTest, SellStop_TriggersAfterWittlingBuys){
+    // Place several buy limit orders
+    Order buy1 = newOrder(BUY, LIMIT, 50, 100);
+    Order buy2 = newOrder(BUY, LIMIT, 50, 90);
+    Order buy3 = newOrder(BUY, LIMIT, 50, 80);
+
+    // Place a sell STOP with stop price in the middle (90)
+    Order sellStop = newOrder(SELL, STOP, 50, 0, 90);
+
+    matcher.addOrder(buy1);
+    matcher.addOrder(buy2);
+    matcher.addOrder(buy3);
+    matcher.addOrder(sellStop);
+
+    // No matches yet; stop should be inactive
+    EXPECT_EQ(4, notifier.placedOrders.size());
+    EXPECT_EQ(0, notifier.matches.size());
+
+    // Use SELL MARKET orders to eat into the buy ladder
+    matcher.addOrder(newOrder(SELL, MARKET, 50)); // consumes buy1 @100
+    EXPECT_GE(notifier.matches.size(), 1);
+
+    matcher.addOrder(newOrder(SELL, MARKET, 50)); // consumes buy2 @90 -> should trigger stop
+
+    // After wittling down buys, the SELL STOP should have executed and produced at least one match
+    bool stopExecuted = false;
+    for(auto &m : notifier.matches){
+        if(m.seller.ordId == sellStop.ordId){ stopExecuted = true; break; }
+    }
+
+    EXPECT_TRUE(stopExecuted);
+}
