@@ -35,16 +35,20 @@ void Matcher::addOrder(const Order& order)
         return;
     }
 
-    if(order.type == LIMIT || order.type == STOPLIMIT)
-    {
-        pushBackLimitOrder(order);
+    switch (order.type) {
+        case LIMIT:
+        case STOPLIMIT:
+            pushBackLimitOrder(order);
+            break;
+        case MARKET:
+        case STOP:
+            marketOrders.push_back(order);
+            break;
+        default:
+            std::logic_error("Order type not implemented!");
     }
-    else if (order.type == MARKET || order.type == STOP)
-    {
-        marketOrders.push_back(order);
-    }
-    lastOrderTimestamp = order.timestamp;
 
+    lastOrderTimestamp = order.timestamp;
     this->notifier->notifyOrderPlaced(order);
     matchOrders();
 };
