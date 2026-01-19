@@ -10,8 +10,8 @@
 
 Spread Matcher::getSpread(){
 
-    bool bidsMissing = buyPrices.end() == buyPrices.begin();
-    bool asksMissing = sellPrices.end() == sellPrices.begin();
+    bool bidsMissing = buyPrices.empty();
+    bool asksMissing = sellPrices.empty();
 
     long int bid;
     if(!bidsMissing){
