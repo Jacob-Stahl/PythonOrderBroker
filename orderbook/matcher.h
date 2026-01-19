@@ -26,10 +26,10 @@ class Matcher{
     private:
         long int lastOrderTimestamp = 0;
 
+        // TODO: Research tree balancing and its effect on performance here
         //Order FIFO queues for different prices
         std::map<long int, std::vector<Order>> sellLimits;
         std::map<long int, std::vector<Order>> buyLimits;
-
 
         // TODO: removed these. map is already sorted: https://en.cppreference.com/w/cpp/container/map.html
         // Ordered set of prices
