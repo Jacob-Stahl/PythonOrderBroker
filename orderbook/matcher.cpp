@@ -28,12 +28,12 @@ Spread Matcher::getSpread(){
 
 void Matcher::addOrder(const Order& order, bool thenMatch)
 {   
-    // TODO mutex that locks the book until orders are added, and matched
-
     // Exit early and send notifications if order is invalid
     if(!validateOrder(order)){
         return;
     }
+
+    // TODO mutex that locks the book until orders are added, and matched
 
     switch (order.type) {
         case LIMIT:
@@ -112,9 +112,34 @@ bool Matcher::validateOrder(const Order& order){
     }
 
     // Prevent orders with 0 or negative prices or quantities from being added to the book
-    if(order.qty < 1 || order.price < 1 || order.stopPrice < 1){
+    if(order.qty < 1){
         this->notifier->notifyOrderPlacementFailed(order,
-            "Can't add order with prices or quanties less than 1");
+            "Can't add order with qty less than 1");
+        return false;
+    }
+
+    switch (order.type)
+    {
+        case STOP:
+        case STOPLIMIT:
+        if (order.stopPrice < 1) {
+            this->notifier->notifyOrderPlacementFailed(order,
+                "Can't add stop order with stopPrice less than 1");
+            return false;
+        }
+        default:
+    }
+
+    switch (order.type)
+    {
+        case LIMIT:
+        case STOPLIMIT:
+        if (order.price < 1) {
+            this->notifier->notifyOrderPlacementFailed(order,
+                "Can't add limit order with price less than 1");
+            return false;
+        }
+        default:
     }
 
     // Prevent irrational stop limit orders from being added to the book
@@ -148,8 +173,10 @@ void Matcher::matchOrders()
         return; // Exit early if there are now market orders
     }
 
-    std::set<int> marketOrdersToRemove{};
-    for(int ordIdx = 0; ordIdx < marketOrders.size(); ordIdx++){
+    std::vector<size_t> marketOrdersToRemove{};
+    //marketOrdersToRemove.reserve(marketOrders.size());
+
+    for(size_t ordIdx = 0; ordIdx < marketOrders.size(); ordIdx++){
         Order& order = marketOrders[ordIdx];
         long int marketPrice;
         Spread spread = getSpread();
@@ -180,14 +207,14 @@ void Matcher::matchOrders()
         }
         
         if(filled){
-            marketOrdersToRemove.insert(ordIdx);
+            marketOrdersToRemove.push_back(ordIdx);
         }
     }
 
     removeIdxs(marketOrders, marketOrdersToRemove);
 };
 
-bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
+bool Matcher::tryFillBuyMarket(Order& marketOrd, const Spread& initialSpread){
     bool marketOrderFilled = false;
     Spread updatedSpread = initialSpread;
     std::vector<long int> limitPricesToRemove{};
@@ -195,8 +222,10 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
     // Iterate through sell limit price buckets, lowest to highest
     for (long int price : sellPrices){
         updatedSpread.lowestAsk = price;
-        marketOrderFilled = matchLimits(marketOrd, updatedSpread, sellLimits[price]);
-        if(sellLimits[price].size() == 0){
+        std::vector<Order>& sellLimitsOfPrice = sellLimits[price];
+
+        marketOrderFilled = matchLimits(marketOrd, updatedSpread, sellLimitsOfPrice);
+        if(sellLimitsOfPrice.size() == 0){
             limitPricesToRemove.push_back(price);
         }
         if(marketOrderFilled){
@@ -208,7 +237,7 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& initialSpread){
     return marketOrderFilled;
 }
 
-bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
+bool Matcher::tryFillSellMarket(Order& marketOrd, const Spread& initialSpread){
     bool marketOrderFilled = false;
     Spread updatedSpread = initialSpread;
     std::vector<long int> limitPricesToRemove{};
@@ -217,8 +246,10 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& initialSpread){
     for (auto it = buyPrices.rbegin(); it != buyPrices.rend(); ++it){
         long int price = *it;
         updatedSpread.highestBid = price;
-        marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimits[price]);
-        if(buyLimits[price].size() == 0){
+        std::vector<Order>& buyLimitsOfPrice = buyLimits[price];
+
+        marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimitsOfPrice);
+        if(buyLimitsOfPrice.size() == 0){
             limitPricesToRemove.push_back(price);
         }
         if(marketOrderFilled){
@@ -260,10 +291,13 @@ void Matcher::removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Sid
 
 bool Matcher::matchLimits(Order& marketOrd, const Spread& spread, 
     std::vector<Order>& limitOrds){ 
-    std::set<int> limitsToRemove;
+    std::vector<size_t> limitsToRemove;
     bool marketOrdFilled = false;
+    //limitsToRemove.reserve(limitOrds.size());
+    
+    size_t limitOrdsSize = limitOrds.size();
 
-    for(int ordIdx = 0; ordIdx < limitOrds.size(); ordIdx++){
+    for(int ordIdx = 0; ordIdx < limitOrdsSize; ordIdx++){
         if(!limitOrds[ordIdx].treatAsLimit(spread)){
             continue;
         }
@@ -271,7 +305,7 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
         auto typeFilled = matchMarketAndLimit(marketOrd, limitOrds[ordIdx]);
         
         if (typeFilled.limit){
-            limitsToRemove.insert(ordIdx);
+            limitsToRemove.push_back(ordIdx);
         }
         
         if (typeFilled.market){
@@ -319,19 +353,30 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
     return typeFilled;
 }
 
-void removeIdxs(std::vector<Order>& orders, const std::set<int>& idxToRemove){
-    
-    if(idxToRemove.size() == 0) { return; }
+void removeIdxs(std::vector<Order>& orders, const std::vector<size_t>& idxToRemove){
+    if(idxToRemove.empty()) return;
 
-    // elements to keep are moved from the read iterator to the write iterator.
     size_t write = 0;
-    for (size_t read = 0; read < orders.size(); ++read) {
-        if (idxToRemove.find(read) == idxToRemove.end()) {
-            orders[write++] = std::move(orders[read]);
+    size_t prev = 0;
+    size_t n = orders.size();
+
+    for(size_t i = 0; i < idxToRemove.size(); ++i){
+        int rem = idxToRemove[i];
+        if(rem < 0) continue;
+        size_t remPos = static_cast<size_t>(rem);
+        if(remPos >= n) break;
+
+        // move the block [prev, remPos) to write
+        for(size_t k = prev; k < remPos; ++k){
+            orders[write++] = std::move(orders[k]);
         }
+        prev = remPos + 1; // skip the removed index
     }
 
-    // at this point, there is a tail of garbage at the end of the vector.
-    // resize to remove it.
+    // move the tail [prev, n)
+    for(size_t k = prev; k < n; ++k){
+        orders[write++] = std::move(orders[k]);
+    }
+
     orders.resize(write);
 }

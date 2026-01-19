@@ -99,7 +99,7 @@ void benchmarkMatcher(){
     Matcher matcher{&notifier};
     OrderFactory ordFactory{};
 
-    int numOrders = 50000;
+    int numOrders = 5000000;
     std::vector<Order> orders{};
 
     for(int i = 0; i <= numOrders; i++){
@@ -107,19 +107,24 @@ void benchmarkMatcher(){
     }
 
     std::cout << "Generated orders. Running benchmark..." << std::endl;
-size_t processed = 0;
-auto last_print = std::chrono::steady_clock::now();
+    size_t processed = 0;
+    auto last_print = std::chrono::steady_clock::now();
 
-for (auto &order : orders) {
-    matcher.addOrder(order);
-    ++processed;
+    for (auto &order : orders) {
+        if(order.type == STOP || order.type == STOPLIMIT){
+            continue;
+        }
+        matcher.addOrder(order);
+        ++processed;
 
-    auto now = std::chrono::steady_clock::now();
-    if (now - last_print >= std::chrono::seconds(1)) {
-        std::cout << processed << " orders processed\n";
-        last_print = now;
+        auto now = std::chrono::steady_clock::now();
+        if (now - last_print >= std::chrono::seconds(1)) {
+            std::cout << processed << " orders processed\n";
+            last_print = now;
+        }
     }
-}
     std::cout << "Done!" << std::endl;
+    std::cout << "Matches Found: " << notifier.matches.size() << std::endl;
+    std::cout << "Orders Rejected: " << notifier.placementFailedOrders.size() << std::endl;
 
 };

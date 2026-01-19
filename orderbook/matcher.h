@@ -48,13 +48,13 @@ class Matcher{
         /// @param order 
         /// @param initialSpread
         /// @return true if filled completely
-        bool tryFillBuyMarket(Order& order, Spread& initialSpread);
+        bool tryFillBuyMarket(Order& order, const Spread& initialSpread);
 
         /// @brief Tries to fill a sell market order as much as possible. Updates fill properties in matched orders
         /// @param order 
         /// @param initialSpread
         /// @return true if filled completely
-        bool tryFillSellMarket(Order& order, Spread& initialSpread);
+        bool tryFillSellMarket(Order& order, const Spread& initialSpread);
 
         /// @brief Remove limit orders from book at given price
         /// @param limitPricesToRemove 
@@ -97,4 +97,4 @@ class Matcher{
 /// @brief Remove provided elements from an Order vec
 /// @param orders
 /// @param idxToRemove 
-void removeIdxs(std::vector<Order>& orders, const std::set<int>& idxToRemove);
+void removeIdxs(std::vector<Order>& orders, const std::vector<size_t>& idxToRemove);
