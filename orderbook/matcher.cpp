@@ -111,6 +111,12 @@ bool Matcher::validateOrder(const Order& order){
         return false;
     }
 
+    // Prevent orders with 0 or negative prices or quantities from being added to the book
+    if(order.qty < 1 || order.price < 1 || order.stopPrice < 1){
+        this->notifier->notifyOrderPlacementFailed(order,
+            "Can't add order with prices or quanties less than 1");
+    }
+
     // Prevent irrational stop limit orders from being added to the book
     if(order.type == STOPLIMIT)
     {
