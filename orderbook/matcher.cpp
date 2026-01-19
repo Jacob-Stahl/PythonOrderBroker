@@ -169,7 +169,7 @@ bool Matcher::validateOrder(const Order& order){
 
 void Matcher::matchOrders()
 {
-    if(marketOrders.size() == 0){
+    if(marketOrders.empty()){
         return; // Exit early if there are now market orders
     }
 
@@ -225,7 +225,7 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, const Spread& initialSpread){
         std::vector<Order>& sellLimitsOfPrice = sellLimits[price];
 
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, sellLimitsOfPrice);
-        if(sellLimitsOfPrice.size() == 0){
+        if(sellLimitsOfPrice.empty()){
             limitPricesToRemove.push_back(price);
         }
         if(marketOrderFilled){
@@ -249,7 +249,7 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, const Spread& initialSpread){
         std::vector<Order>& buyLimitsOfPrice = buyLimits[price];
 
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimitsOfPrice);
-        if(buyLimitsOfPrice.size() == 0){
+        if(buyLimitsOfPrice.empty()){
             limitPricesToRemove.push_back(price);
         }
         if(marketOrderFilled){
@@ -263,7 +263,7 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, const Spread& initialSpread){
 
 void Matcher::removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Side side){
     
-    if(limitPricesToRemove.size() == 0){
+    if(limitPricesToRemove.empty()){
         return; // early return if there are no limit prices to remove
     }
     
