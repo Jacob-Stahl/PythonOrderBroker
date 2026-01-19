@@ -78,26 +78,33 @@ void Matcher::dumpOrdersTo(std::vector<Order>& orders){
 }
 
 void Matcher::pushBackLimitOrder(const Order& order){
-    bool newLimitPrice;
-    
+
+    const int reserveLimits = 16;
+
     switch(order.side)
     {
-        case SELL:
-            newLimitPrice = sellLimits.find(order.price) == sellLimits.end();
-            if(newLimitPrice){
-                this->sellPrices.insert(order.price);
-                this->sellLimits[order.price] = std::vector<Order>();
+        case SELL: {
+            auto it = sellLimits.find(order.price);
+            if (it == sellLimits.end()) {
+                auto res = sellLimits.insert(std::make_pair(order.price, std::vector<Order>{}));
+                it = res.first;
+                sellPrices.insert(order.price);
+                it->second.reserve(reserveLimits); // Reserve a few extra elements
             }
-            this->sellLimits[order.price].push_back(order);
+            it->second.push_back(order);
             break;
-        case BUY:
-            newLimitPrice = buyLimits.find(order.price) == buyLimits.end();
-            if(newLimitPrice){
-                this->buyPrices.insert(order.price);
-                this->buyLimits[order.price] = std::vector<Order>();
+        }
+        case BUY: {
+            auto it = buyLimits.find(order.price);
+            if (it == buyLimits.end()) {
+                auto res = buyLimits.insert(std::make_pair(order.price, std::vector<Order>{}));
+                it = res.first;
+                buyPrices.insert(order.price);
+                it->second.reserve(reserveLimits);
             }
-            this->buyLimits[order.price].push_back(order);
+            it->second.push_back(order);
             break;
+        }
     }
 }
 
