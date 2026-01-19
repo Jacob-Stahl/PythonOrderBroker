@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "order.h"
+#include <stdexcept>
 
 // TODO time of match might be important for message ordering down stream
 struct Match{

@@ -1,12 +1,125 @@
 #include <iostream>
 #include "order.h"
 #include "matcher.h"
+#include <random>
+#include <chrono>
+#include <type_traits>
+
+void benchmarkMatcher();
 
 int main() {
     // Simple C++ Orderbook application
 
+    benchmarkMatcher();
 
     // Some comment
     std::cout << "Orderbook service is running..." << std::endl;
     return 0;
 }
+
+
+template <typename Enum, int maxValue>
+Enum random_enum()
+{
+    static_assert(std::is_enum_v<Enum>);
+
+    static std::mt19937 rng{std::random_device{}()};
+
+    using U = std::underlying_type_t<Enum>;
+
+    constexpr U min = static_cast<U>(1);
+    constexpr U max = static_cast<U>(maxValue);
+
+    std::uniform_int_distribution<U> dist(min, max);
+    return static_cast<Enum>(dist(rng));
+}
+
+class OrderFactory{
+    long int currentIdTimestamp = 1;
+    std::mt19937 gen;
+    std::uniform_int_distribution<long> qtyDistrib;
+    std::normal_distribution<double> priceDistrib;
+    std::normal_distribution<double> stopPriceFactorDistrib;
+    double spreadFactor = 10;
+
+    public:
+        OrderFactory(){
+            qtyDistrib = std::uniform_int_distribution<long>(1, 100);
+            priceDistrib = std::normal_distribution<double>(1000, 100);
+            stopPriceFactorDistrib = std::normal_distribution<double>(30, 10);
+            
+            std::random_device device;
+            gen = std::mt19937(device());
+        }
+
+        Order newOrder(Side side, OrdType type, long qty, long price = 0, long stopPrice = 0){
+            Order o{};
+            o.traderId = currentIdTimestamp;
+            o.ordId = currentIdTimestamp;
+            o.side = side;
+            o.qty = qty;
+            o.price = price;
+            o.stopPrice = stopPrice;
+            o.symbol = "TEST";
+            o.type = type;
+            o.timestamp = currentIdTimestamp;
+
+            ++currentIdTimestamp;
+            return o;
+        }
+
+        Order randomOrder(){
+            Side side = random_enum<Side, 2>();
+            OrdType ordType = random_enum<OrdType, 4>();
+            long qty = qtyDistrib(gen);
+            double price = priceDistrib(gen);
+            double stopPriceFactor = stopPriceFactorDistrib(gen);
+            double stopPrice;
+
+
+            switch(side){
+                case BUY:
+                    price = price - spreadFactor;
+                    stopPrice = price + stopPriceFactor;
+                    break;
+                case SELL:
+                    price = price + spreadFactor; 
+                    stopPrice = price - stopPriceFactor;
+                    break;
+            }
+            
+            return newOrder(side, ordType, qty, price, stopPrice);
+        }
+};
+    
+
+void benchmarkMatcher(){
+
+    MockNotifier notifier;
+    Matcher matcher{&notifier};
+    OrderFactory ordFactory{};
+
+    int numOrders = 50000;
+    std::vector<Order> orders{};
+
+    for(int i = 0; i <= numOrders; i++){
+        orders.push_back(ordFactory.randomOrder());
+    }
+
+    std::cout << "Generated orders. Running benchmark..." << std::endl;
+size_t processed = 0;
+auto last_print = std::chrono::steady_clock::now();
+
+for (auto &order : orders) {
+    matcher.addOrder(order);
+    ++processed;
+
+    auto now = std::chrono::steady_clock::now();
+    if (now - last_print >= std::chrono::seconds(1)) {
+        std::cout << processed << " orders processed\n";
+        last_print = now;
+    }
+}
+    std::cout << "Done!" << std::endl;
+
+};
