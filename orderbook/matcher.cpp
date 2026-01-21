@@ -15,12 +15,22 @@ Spread Matcher::getSpread(){
 
     long int bid;
     if(!bidsMissing){
-        bid = *buyPrices.rbegin();
+        for (auto it = buyLimits.rbegin(); it != buyLimits.rend(); ++it){
+            if(!it->second.empty()){
+                bid = it->first;
+                break;
+            }
+        }
     }
 
     long int ask;
     if(!asksMissing){
-        ask = *sellPrices.begin();
+        for (auto& [price, book] : sellLimits){
+            if(!book.empty()){
+                ask = price;
+                break;
+            }
+        }
     }
     
     return Spread{bidsMissing, asksMissing, bid, ask};
@@ -227,12 +237,11 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, const Spread& initialSpread){
     std::vector<long int> limitPricesToRemove{};
 
     // Iterate through sell limit price buckets, lowest to highest
-    for (long int price : sellPrices){
+    for (auto& [price, book] : sellLimits){
         updatedSpread.lowestAsk = price;
-        std::vector<Order>& sellLimitsOfPrice = sellLimits[price];
 
-        marketOrderFilled = matchLimits(marketOrd, updatedSpread, sellLimitsOfPrice);
-        if(sellLimitsOfPrice.empty()){
+        marketOrderFilled = matchLimits(marketOrd, updatedSpread, book);
+        if(book.empty()){
             limitPricesToRemove.push_back(price);
         }
         if(marketOrderFilled){
@@ -250,13 +259,12 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, const Spread& initialSpread){
     std::vector<long int> limitPricesToRemove{};
 
     // Iterate through buy limit price buckets, highest to lowest
-    for (auto it = buyPrices.rbegin(); it != buyPrices.rend(); ++it){
-        long int price = *it;
+    for (auto it = buyLimits.rbegin(); it != buyLimits.rend(); ++it){
+        long int price = it->first;
         updatedSpread.highestBid = price;
-        std::vector<Order>& buyLimitsOfPrice = buyLimits[price];
 
-        marketOrderFilled = matchLimits(marketOrd, updatedSpread, buyLimitsOfPrice);
-        if(buyLimitsOfPrice.empty()){
+        marketOrderFilled = matchLimits(marketOrd, updatedSpread, it->second);
+        if(it->second.empty()){
             limitPricesToRemove.push_back(price);
         }
         if(marketOrderFilled){
