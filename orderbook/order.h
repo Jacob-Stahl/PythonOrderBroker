@@ -50,7 +50,7 @@ struct Order{
     /// @brief Order type (Market, Limit, Stop).
     OrdType type;
     /// @brief Time the order was recieved by the service
-    unsigned long int timestamp;
+    unsigned long timestamp;
     /// @brief Number of items filled. 
     unsigned int fill = 0;
     /// @brief Calculate the total amount of the order.

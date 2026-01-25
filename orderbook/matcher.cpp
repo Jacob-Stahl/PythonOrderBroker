@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 #include <format>
-
+#include <unordered_map>
 
 // TODO: consider STOPLIMITS in spread? does this create a chicken and egg problem?
 const Spread Matcher::getSpread(){
@@ -75,6 +75,7 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
             std::logic_error("Order type not implemented!");
     }
 
+    orderLookupCache.insert({order.ordId, {order.price, order.type}});
     lastOrderTimestamp = order.timestamp;
     this->notifier->notifyOrderPlaced(order);
 
@@ -83,8 +84,22 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
     }
 };
 
-void cancelOrder(long ordId){
-    // Stub
+void Matcher::cancelOrder(long ordId){
+
+    // https://en.cppreference.com/w/cpp/container/unordered_map/find.html
+    auto search = orderLookupCache.find(ordId);
+    if(search == orderLookupCache.end()){
+        // notify cancel failed
+    }
+    else{
+        // Find
+        // Cancel
+
+        // notify cancel was sucessful
+    }
+
+    // TODO add this to remove limits and markets
+    orderLookupCache.erase(ordId);
 }
 
 void Matcher::dumpOrdersTo(std::vector<Order>& orders){

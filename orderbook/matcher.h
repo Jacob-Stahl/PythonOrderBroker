@@ -8,6 +8,7 @@
 #include <queue>
 #include <map>
 #include <stdexcept>
+#include <unordered_map>
 
 struct TypeFilled{
     bool market = false;
@@ -20,17 +21,23 @@ struct TypeFilled{
         }
 };
 
+struct OrderLookupCacheEntry{
+    unsigned short price;
+    OrdType type;
+};
+
 /// @brief Processes orders for a single symbol
 class Matcher{
 
     private:
-        long int lastOrderTimestamp = 0;
+        unsigned long lastOrderTimestamp = 0;
+
+        std::unordered_map<long, OrderLookupCacheEntry> orderLookupCache;
 
         // TODO: Research tree balancing and its effect on performance here
         //Order FIFO queues for different prices
         std::map<unsigned short, std::vector<Order>> sellLimits;
         std::map<unsigned short, std::vector<Order>> buyLimits;
-
 
         std::vector<Order> marketOrders;
 
