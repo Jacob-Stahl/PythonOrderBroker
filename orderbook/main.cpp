@@ -111,9 +111,6 @@ void benchmarkMatcher(){
     auto last_print = std::chrono::steady_clock::now();
 
     for (auto &order : orders) {
-        if(order.type == STOP || order.type == STOPLIMIT){
-            continue;
-        }
         matcher.addOrder(order);
         ++processed;
 
