@@ -388,6 +388,7 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
         limitOrd.fill = limitOrd.qty;
         marketOrd.fill = marketOrd.fill + fillThisMatch;
         typeFilled.limit = true;
+        orderLookupCache.erase(limitOrd.ordId);
     }
     // Market order can be completely filled
     else if (limUnFill > markUnFill)
@@ -396,6 +397,7 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
         limitOrd.fill = limitOrd.fill + fillThisMatch;
         marketOrd.fill = marketOrd.qty;
         typeFilled.market = true;
+        orderLookupCache.erase(marketOrd.ordId);
     }
     // Market and Limit have the same unfilled qty; both can be filled
     else if (limUnFill == markUnFill){
@@ -403,6 +405,8 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
         limitOrd.fill = limitOrd.qty;
         marketOrd.fill = marketOrd.qty;
         typeFilled.both();
+        orderLookupCache.erase(marketOrd.ordId);
+        orderLookupCache.erase(limitOrd.ordId);
     }
 
     Match match = Match(marketOrd, limitOrd, fillThisMatch);
