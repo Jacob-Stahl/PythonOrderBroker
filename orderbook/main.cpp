@@ -35,6 +35,17 @@ Enum random_enum()
     return static_cast<Enum>(dist(rng));
 }
 
+// weighted picker: weights.size() == number of enum values (ordered by underlying value starting at 1)
+template<typename Enum>
+Enum weighted_random_enum(const std::vector<double>& weights) {
+    static_assert(std::is_enum_v<Enum>);
+    static std::mt19937 rng{std::random_device{}()};
+    std::discrete_distribution<size_t> dist(weights.begin(), weights.end());
+    size_t idx = dist(rng);           // idx in [0, weights.size()-1]
+    using U = std::underlying_type_t<Enum>;
+    return static_cast<Enum>(static_cast<U>(idx + 1)); // +1 because enums are assumed to start at 1
+}
+
 class OrderFactory{
     long int currentIdTimestamp = 1;
     std::mt19937 gen;
@@ -71,7 +82,14 @@ class OrderFactory{
 
         Order randomOrder(){
             Side side = random_enum<Side, 2>();
-            OrdType ordType = random_enum<OrdType, 4>();
+            OrdType ordType = weighted_random_enum<OrdType>(
+                {
+                    1.0, // MARKET
+                    1.0, // LIMIT
+                    1.0, // STOP
+                    0.0, // STOPLIMIT
+                }
+            );
             long qty = qtyDistrib(gen);
             double price = priceDistrib(gen);
             double stopPriceFactor = stopPriceFactorDistrib(gen);

@@ -21,9 +21,11 @@ bool Order::treatAsMarket(const Spread& spread){
             Treat buy-stop as a buy-market if marketPrice >= price
             Treat sell-stop as a sell-market if marketPrice <= price
             */
-            if(side == BUY){
+            if (side == BUY) {
+                if (spread.asksMissing) return false;
                 return spread.lowestAsk >= stopPrice;
             } else {
+                if (spread.bidsMissing) return false;
                 return spread.highestBid <= stopPrice;
             }
         }
