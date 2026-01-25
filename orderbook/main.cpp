@@ -3,6 +3,7 @@
 #include "matcher.h"
 #include <random>
 #include <chrono>
+#include <unordered_map>
 #include <type_traits>
 
 void benchmarkMatcher();
@@ -116,7 +117,31 @@ void benchmarkMatcher(){
 
         auto now = std::chrono::steady_clock::now();
         if (now - last_print >= std::chrono::seconds(1)) {
-            std::cout << processed << " orders processed\n";
+            auto counts = matcher.getOrderCounts();
+            auto spread = matcher.getSpread();
+            std::cout << processed << " orders processed | "
+                      << "MARKET:" << counts[MARKET]
+                      << " LIMIT:" << counts[LIMIT]
+                      << " STOP:" << counts[STOP]
+                      << " STOPLIMIT:" << counts[STOPLIMIT]
+
+                      << " | "
+                      << "Matches found:" << notifier.matches.size()
+                      << " | Spread:";
+
+            if (spread.bidsMissing) {
+                std::cout << " bidsMissing";
+            } else {
+                std::cout << " highestBid:" << spread.highestBid;
+            }
+
+            if (spread.asksMissing) {
+                std::cout << " asksMissing";
+            } else {
+                std::cout << " lowestAsk:" << spread.lowestAsk;
+            }
+
+            std::cout << "\n";
             last_print = now;
         }
     }
