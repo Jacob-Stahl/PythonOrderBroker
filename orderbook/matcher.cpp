@@ -61,6 +61,8 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
     }
 
     // TODO mutex that locks the book until orders are added, and matched
+    // TODO accumulate incoming orders with 1 thread (up to some limit); place in bulk and match with another thread
+    // TODO how does this effect ordering?
 
     switch (order.type) {
         case LIMIT:
