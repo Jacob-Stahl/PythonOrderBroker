@@ -34,6 +34,23 @@ const Spread Matcher::getSpread(){
     return Spread{bidsMissing, asksMissing, bid, ask};
 }
 
+const std::unordered_map<OrdType, int> Matcher::getOrderCounts(){
+    std::unordered_map<OrdType, int> counts{
+        {MARKET, 0},
+        {LIMIT, 0},
+        {STOP, 0},
+        {STOPLIMIT, 0}
+    };
+    std::vector<Order> allOrders{};
+    dumpOrdersTo(allOrders);
+
+    for(auto& order : allOrders){
+        counts[order.type]++;
+    }
+    return counts;
+
+}
+
 void Matcher::addOrder(const Order& order, bool thenMatch)
 {   
     // Exit early and send notifications if order is invalid
@@ -65,6 +82,7 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
 };
 
 void Matcher::dumpOrdersTo(std::vector<Order>& orders){
+    
     // Add market and stop orders
     for(auto order : marketOrders){
         orders.push_back(order);

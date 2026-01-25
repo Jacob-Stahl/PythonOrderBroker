@@ -293,3 +293,27 @@ TEST_F(MatcherTest, DumpOrdersTo_ExcludesCompletelyFilledOrders){
     EXPECT_TRUE(foundBuyLimit2);
     EXPECT_TRUE(foundSellLimit);
 }
+
+TEST_F(MatcherTest, GetOrderCounts_ReturnsCorrectCounts){
+    auto o1 = newOrder(BUY, MARKET, 1); // Should be matched with STOPLIMIT
+    auto o2 = newOrder(BUY, LIMIT, 1, 100);
+    auto o3 = newOrder(SELL, STOP, 1, 0, 50);
+    auto o4 = newOrder(SELL, STOPLIMIT, 1, 200, 210); // Should be matched with MARKET
+    auto o5 = newOrder(BUY, LIMIT, 1, 120);
+
+    matcher.addOrder(o1);
+    matcher.addOrder(o2);
+    matcher.addOrder(o3);
+    matcher.addOrder(o4);
+    matcher.addOrder(o5);
+
+    EXPECT_EQ(1, notifier.matches.size());
+    EXPECT_EQ(5, notifier.placedOrders.size());
+    EXPECT_EQ(0, notifier.placementFailedOrders.size());
+
+    auto counts = matcher.getOrderCounts();
+    EXPECT_EQ(0, counts.at(MARKET));
+    EXPECT_EQ(2, counts.at(LIMIT));
+    EXPECT_EQ(1, counts.at(STOP));
+    EXPECT_EQ(0, counts.at(STOPLIMIT));
+}
