@@ -89,7 +89,8 @@ class Matcher{
         /// @param orders 
         void dumpOrdersTo(std::vector<Order>& orders);
 
-        Spread getSpread();
+        const Spread getSpread();
+        const std::map<OrdType, int> getOrderCounts();
 };
 
 /// @brief Remove provided elements from an Order vec

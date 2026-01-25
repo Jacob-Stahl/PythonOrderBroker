@@ -8,7 +8,7 @@
 #include <string_view>
 #include <format>
 
-Spread Matcher::getSpread(){
+const Spread Matcher::getSpread(){
 
     bool bidsMissing = true;
     bool asksMissing = true;
@@ -234,12 +234,13 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, const Spread& initialSpread){
 
     // Iterate through sell limit price buckets, lowest to highest
     for (auto& [price, book] : sellLimits){
-        updatedSpread.lowestAsk = price;
-
-        marketOrderFilled = matchLimits(marketOrd, updatedSpread, book);
         if(book.empty()){
             limitPricesToRemove.push_back(price);
+            continue;
         }
+        updatedSpread.lowestAsk = price;
+        marketOrderFilled = matchLimits(marketOrd, updatedSpread, book);
+
         if(marketOrderFilled){
             break;
         }
@@ -257,12 +258,15 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, const Spread& initialSpread){
     // Iterate through buy limit price buckets, highest to lowest
     for (auto it = buyLimits.rbegin(); it != buyLimits.rend(); ++it){
         long int price = it->first;
+
+        if(it->second.empty()){
+            limitPricesToRemove.push_back(price);
+            continue;
+        }
+
         updatedSpread.highestBid = price;
 
         marketOrderFilled = matchLimits(marketOrd, updatedSpread, it->second);
-        if(it->second.empty()){
-            limitPricesToRemove.push_back(price);
-        }
         if(marketOrderFilled){
             break;
         }
@@ -302,9 +306,11 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
     std::vector<Order>& limitOrds){ 
     std::vector<size_t> limitsToRemove;
     bool marketOrdFilled = false;
-    //limitsToRemove.reserve(limitOrds.size());
-    
     size_t limitOrdsSize = limitOrds.size();
+
+    if(limitOrdsSize == 0){
+        return false;
+    }
 
     for(int ordIdx = 0; ordIdx < limitOrdsSize; ordIdx++){
         if(!limitOrds[ordIdx].treatAsLimit(spread)){
