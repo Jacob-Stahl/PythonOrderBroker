@@ -85,8 +85,8 @@ class OrderFactory{
             OrdType ordType = weighted_random_enum<OrdType>(
                 {
                     1.0, // MARKET
-                    1.0, // LIMIT
-                    0.0, // STOP
+                    2.0, // LIMIT
+                    1.0, // STOP
                     0.0, // STOPLIMIT
                 }
             );
