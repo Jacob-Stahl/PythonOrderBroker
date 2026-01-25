@@ -208,7 +208,7 @@ void Matcher::matchOrders()
 
     size_t ordIdx = -1;
     for(auto& order : marketOrders){
-
+        ordIdx++;
         // Skip attempts to match orders if we can
         if(spread.asksMissing && spread.bidsMissing) break;
         if(spread.asksMissing && order.side == BUY){
@@ -217,10 +217,6 @@ void Matcher::matchOrders()
         if(spread.bidsMissing && order.side == SELL){
             continue;
         }
-
-        ordIdx++;
-        spread = getSpread();
-
         // Leave this order alone, and move to the next if it shouldn't be treated as a market order
         if (!order.treatAsMarket(spread)){
             continue;
@@ -247,8 +243,11 @@ void Matcher::matchOrders()
         }
         
         if(filled){
+
             marketOrdersToRemove.push_back(ordIdx);
         }
+
+        spread = getSpread();
     }
 
     removeIdxs(marketOrders, marketOrdersToRemove);
