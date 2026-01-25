@@ -83,6 +83,10 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
     }
 };
 
+void cancelOrder(long ordId){
+    // Stub
+}
+
 void Matcher::dumpOrdersTo(std::vector<Order>& orders){
     
     // Add market and stop orders
