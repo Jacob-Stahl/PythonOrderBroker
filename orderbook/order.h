@@ -6,8 +6,8 @@ struct Spread{
     bool bidsMissing = true;
     bool asksMissing = true;
 
-    long int highestBid;
-    long int lowestAsk;
+    unsigned short highestBid;
+    unsigned short lowestAsk;
 };
 
 /// @brief Subset of the order types found here: https://www.onixs.biz/fix-dictionary/4.4/tagNum_40.html
@@ -34,28 +34,28 @@ enum Side {
 struct Order{
 
     /// @brief Id of the trader that placed this order
-    long int traderId;
+    long traderId;
     /// @brief Unique id of this order
-    long int ordId;
+    long ordId;
     /// @brief Buy or Sell
     Side side;
     /// @brief Quantity of the order.
-    long int qty;
+    unsigned int qty;
     /// @brief Price of the order in cents.
-    long int price;
+    unsigned short price;
     /// @brief Stop price of the order.
-    long int stopPrice;
+    unsigned short stopPrice;
     /// @brief Symbol
     std::string symbol;
     /// @brief Order type (Market, Limit, Stop).
     OrdType type;
     /// @brief Time the order was recieved by the service
-    long int timestamp;
+    unsigned long int timestamp;
     /// @brief Number of items filled. 
-    long int fill = 0;
+    unsigned int fill = 0;
     /// @brief Calculate the total amount of the order.
     /// @return The total amount in cents.
-    const long int amt();
+    const unsigned int amt();
 
     /// @brief Determine if the order should be treated as a market order based on the current market price.
     /// @param marketPrice 
@@ -68,12 +68,11 @@ struct Order{
     const bool treatAsLimit(const Spread& spread);
 
     const bool fillComplete(){
-
-        // TODO add exception if fill > qty
         return qty == fill;
     }
 
-    const long int unfilled(){
+    const unsigned int unfilled(){
+        // A bit dangerous. unfilled should NEVER be negative
         return qty - fill;
     }
 };

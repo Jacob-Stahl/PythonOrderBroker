@@ -15,7 +15,7 @@ const Spread Matcher::getSpread(){
     bool bidsMissing = true;
     bool asksMissing = true;
 
-    long int bid;
+    unsigned short bid;
     for (auto it = buyLimits.rbegin(); it != buyLimits.rend(); ++it){
         if(!it->second.empty()){
             bid = it->first;
@@ -24,7 +24,7 @@ const Spread Matcher::getSpread(){
         }
     }
 
-    long int ask;
+    unsigned short ask;
     for (auto& [price, book] : sellLimits){
         if(!book.empty()){
             ask = price;
@@ -258,7 +258,7 @@ void Matcher::matchOrders()
 
 bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& spread){
     bool marketOrderFilled = false;
-    std::vector<long int> limitPricesToRemove{};
+    std::vector<unsigned short> limitPricesToRemove{};
 
     // Iterate through sell limit price buckets, lowest to highest
     for (auto& [price, book] : sellLimits){
@@ -280,11 +280,11 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& spread){
 
 bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& spread){
     bool marketOrderFilled = false;
-    std::vector<long int> limitPricesToRemove{};
+    std::vector<unsigned short> limitPricesToRemove{};
 
     // Iterate through buy limit price buckets, highest to lowest
     for (auto it = buyLimits.rbegin(); it != buyLimits.rend(); ++it){
-        long int price = it->first;
+        unsigned short price = it->first;
 
         if(it->second.empty()){
             limitPricesToRemove.push_back(price);
@@ -303,7 +303,7 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& spread){
     return marketOrderFilled;
 }
 
-void Matcher::removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Side side){
+void Matcher::removeLimitsByPrice(std::vector<unsigned short> limitPricesToRemove, Side side){
     
     if(limitPricesToRemove.empty()){
         return; // early return if there are no limit prices to remove
@@ -339,7 +339,7 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
         return false;
     }
 
-    for(int ordIdx = 0; ordIdx < limitOrdsSize; ordIdx++){
+    for(size_t ordIdx = 0; ordIdx < limitOrdsSize; ordIdx++){
         if(!limitOrds[ordIdx].treatAsLimit(spread)){
             continue;
         }
@@ -361,9 +361,9 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
 }
 
 TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
-    long int limUnFill = limitOrd.unfilled();
-    long int markUnFill = marketOrd.unfilled();
-    long int fillThisMatch = 0;
+    unsigned int limUnFill = limitOrd.unfilled();
+    unsigned int markUnFill = marketOrd.unfilled();
+    unsigned int fillThisMatch = 0;
     TypeFilled typeFilled = TypeFilled();
 
     // Limit order can be completely filled

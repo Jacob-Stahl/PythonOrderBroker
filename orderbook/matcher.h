@@ -28,8 +28,8 @@ class Matcher{
 
         // TODO: Research tree balancing and its effect on performance here
         //Order FIFO queues for different prices
-        std::map<long int, std::vector<Order>> sellLimits;
-        std::map<long int, std::vector<Order>> buyLimits;
+        std::map<unsigned short, std::vector<Order>> sellLimits;
+        std::map<unsigned short, std::vector<Order>> buyLimits;
 
 
         std::vector<Order> marketOrders;
@@ -57,7 +57,7 @@ class Matcher{
         /// @brief Remove limit orders from book at given price
         /// @param limitPricesToRemove 
         /// @param side 
-        void removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Side side);
+        void removeLimitsByPrice(std::vector<unsigned short> limitPricesToRemove, Side side);
 
         /// @brief Matches a market order with limits sorted from the oldest to newest
         /// @param marketOrd 

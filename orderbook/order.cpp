@@ -2,7 +2,7 @@
 #include <string>
 #include "order.h"
 
-const long int Order::amt(){
+const unsigned int Order::amt(){
     return qty * price;
 }
 
