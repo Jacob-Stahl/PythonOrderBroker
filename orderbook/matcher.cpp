@@ -8,6 +8,8 @@
 #include <string_view>
 #include <format>
 
+
+// TODO: consider STOPLIMITS in spread? does this create a chicken and egg problem?
 const Spread Matcher::getSpread(){
 
     bool bidsMissing = true;
