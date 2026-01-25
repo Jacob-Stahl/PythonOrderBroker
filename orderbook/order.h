@@ -55,25 +55,25 @@ struct Order{
     long int fill = 0;
     /// @brief Calculate the total amount of the order.
     /// @return The total amount in cents.
-    long int amt();
+    const long int amt();
 
     /// @brief Determine if the order should be treated as a market order based on the current market price.
     /// @param marketPrice 
     /// @return 
-    bool treatAsMarket(const Spread& spread);
+    const bool treatAsMarket(const Spread& spread);
 
     /// @brief Determine if the order should be treated as a limit order based on the current market price
     /// @param spread 
     /// @return 
-    bool treatAsLimit(const Spread& spread);
+    const bool treatAsLimit(const Spread& spread);
 
-    bool fillComplete(){
+    const bool fillComplete(){
 
         // TODO add exception if fill > qty
         return qty == fill;
     }
 
-    long int unfilled(){
+    const long int unfilled(){
         return qty - fill;
     }
 };

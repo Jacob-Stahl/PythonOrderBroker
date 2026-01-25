@@ -2,11 +2,11 @@
 #include <string>
 #include "order.h"
 
-long int Order::amt(){
+const long int Order::amt(){
     return qty * price;
 }
 
-bool Order::treatAsMarket(const Spread& spread){
+const bool Order::treatAsMarket(const Spread& spread){
     switch(type){
         case MARKET:
             return true;
@@ -32,7 +32,7 @@ bool Order::treatAsMarket(const Spread& spread){
     }
 }
 
-bool Order::treatAsLimit(const Spread& spread){
+const bool Order::treatAsLimit(const Spread& spread){
     switch(type){
         case MARKET:
             return false;
