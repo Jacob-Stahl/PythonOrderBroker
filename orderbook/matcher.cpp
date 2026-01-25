@@ -203,15 +203,24 @@ void Matcher::matchOrders()
     if(marketOrders.empty()){
         return; // Exit early if there are now market orders
     }
-
     std::vector<size_t> marketOrdersToRemove{};
-    //marketOrdersToRemove.reserve(marketOrders.size());
+    Spread spread = getSpread();
 
-    for(size_t ordIdx = 0; ordIdx < marketOrders.size(); ordIdx++){
-        Order& order = marketOrders[ordIdx];
-        long int marketPrice;
-        Spread spread = getSpread();
-        
+    size_t ordIdx = -1;
+    for(auto& order : marketOrders){
+
+        // Skip attempts to match orders if we can
+        if(spread.asksMissing && spread.bidsMissing) break;
+        if(spread.asksMissing && order.side == BUY){
+            continue;
+        }
+        if(spread.bidsMissing && order.side == SELL){
+            continue;
+        }
+
+        ordIdx++;
+        spread = getSpread();
+
         // Leave this order alone, and move to the next if it shouldn't be treated as a market order
         if (!order.treatAsMarket(spread)){
             continue;
