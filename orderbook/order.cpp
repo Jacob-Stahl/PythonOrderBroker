@@ -40,8 +40,10 @@ bool Order::treatAsLimit(const Spread& spread){
             return true;
         case STOPLIMIT:
             if(side == BUY){
+                if (spread.asksMissing) return false;
                 return spread.lowestAsk >= stopPrice;
             } else {
+                if (spread.bidsMissing) return false;
                 return spread.highestBid <= stopPrice;
             }
         case STOP : {
