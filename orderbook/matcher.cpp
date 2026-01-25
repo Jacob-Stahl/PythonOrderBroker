@@ -10,26 +10,24 @@
 
 Spread Matcher::getSpread(){
 
-    bool bidsMissing = buyLimits.empty();
-    bool asksMissing = sellLimits.empty();
+    bool bidsMissing = true;
+    bool asksMissing = true;
 
     long int bid;
-    if(!bidsMissing){
-        for (auto it = buyLimits.rbegin(); it != buyLimits.rend(); ++it){
-            if(!it->second.empty()){
-                bid = it->first;
-                break;
-            }
+    for (auto it = buyLimits.rbegin(); it != buyLimits.rend(); ++it){
+        if(!it->second.empty()){
+            bid = it->first;
+            bidsMissing = false;
+            break;
         }
     }
 
     long int ask;
-    if(!asksMissing){
-        for (auto& [price, book] : sellLimits){
-            if(!book.empty()){
-                ask = price;
-                break;
-            }
+    for (auto& [price, book] : sellLimits){
+        if(!book.empty()){
+            ask = price;
+            asksMissing = false;
+            break;
         }
     }
     
