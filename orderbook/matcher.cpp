@@ -64,8 +64,8 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
     // TODO accumulate incoming orders with 1 thread (up to some limit); place in bulk and match with another thread
     // TODO how does this effect ordering?
     // Mark orders with group number, then compare timestamps within that group to prevent markets from being matched with future limits (only within that group)
-    // Does this screw with stops?
-    
+    // Does this screw with stops? depends on how spread is updated while group is matched. might be ok
+
     switch (order.type) {
         case LIMIT:
         case STOPLIMIT:
