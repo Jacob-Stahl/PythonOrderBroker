@@ -31,10 +31,6 @@ class Matcher{
         std::map<long int, std::vector<Order>> sellLimits;
         std::map<long int, std::vector<Order>> buyLimits;
 
-        // TODO: removed these. map is already sorted: https://en.cppreference.com/w/cpp/container/map.html
-        // Ordered set of prices
-        std::set<long int> sellPrices;
-        std::set<long int> buyPrices;
 
         std::vector<Order> marketOrders;
 

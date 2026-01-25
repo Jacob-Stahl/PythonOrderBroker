@@ -10,8 +10,8 @@
 
 Spread Matcher::getSpread(){
 
-    bool bidsMissing = buyPrices.empty();
-    bool asksMissing = sellPrices.empty();
+    bool bidsMissing = buyLimits.empty();
+    bool asksMissing = sellLimits.empty();
 
     long int bid;
     if(!bidsMissing){
@@ -73,15 +73,15 @@ void Matcher::dumpOrdersTo(std::vector<Order>& orders){
     }
 
     // Add buy limits and stop limits
-    for(long price : buyPrices){
-        for(auto order : buyLimits[price]){
+    for(auto& [price, book] : buyLimits){
+        for(auto order : book){
             orders.push_back(order);
         }
     }
 
     // Add sell limits and stop limits
-    for(long price : sellPrices){
-        for(auto order : sellLimits[price]){
+    for(auto& [price, book] : sellLimits){
+        for(auto order : book){
             orders.push_back(order);
         }
     }
@@ -98,7 +98,6 @@ void Matcher::pushBackLimitOrder(const Order& order){
             if (it == sellLimits.end()) {
                 auto res = sellLimits.insert(std::make_pair(order.price, std::vector<Order>{}));
                 it = res.first;
-                sellPrices.insert(order.price);
                 it->second.reserve(reserveLimits); // Reserve a few extra elements
             }
             it->second.push_back(order);
@@ -109,7 +108,6 @@ void Matcher::pushBackLimitOrder(const Order& order){
             if (it == buyLimits.end()) {
                 auto res = buyLimits.insert(std::make_pair(order.price, std::vector<Order>{}));
                 it = res.first;
-                buyPrices.insert(order.price);
                 it->second.reserve(reserveLimits);
             }
             it->second.push_back(order);
@@ -289,7 +287,6 @@ void Matcher::removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Sid
                     throw std::logic_error("Can't remove non-empty list of limits!");
                 }
                 sellLimits.erase(price);
-                sellPrices.erase(price);
             }
             break;
         case BUY:
@@ -298,7 +295,6 @@ void Matcher::removeLimitsByPrice(std::vector<long int> limitPricesToRemove, Sid
                     throw std::logic_error("Can't remove non-empty list of limits!");
                 }
                 buyLimits.erase(price);
-                buyPrices.erase(price);
             }
             break;
     }
