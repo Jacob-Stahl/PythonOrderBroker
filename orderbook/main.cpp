@@ -86,7 +86,7 @@ class OrderFactory{
                 {
                     1.0, // MARKET
                     1.0, // LIMIT
-                    1.0, // STOP
+                    0.0, // STOP
                     0.0, // STOPLIMIT
                 }
             );

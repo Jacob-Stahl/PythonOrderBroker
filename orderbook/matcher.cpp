@@ -247,15 +247,14 @@ void Matcher::matchOrders()
             marketOrdersToRemove.push_back(ordIdx);
         }
 
-        spread = getSpread();
+        //spread = getSpread();
     }
 
     removeIdxs(marketOrders, marketOrdersToRemove);
 };
 
-bool Matcher::tryFillBuyMarket(Order& marketOrd, const Spread& initialSpread){
+bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& spread){
     bool marketOrderFilled = false;
-    Spread updatedSpread = initialSpread;
     std::vector<long int> limitPricesToRemove{};
 
     // Iterate through sell limit price buckets, lowest to highest
@@ -264,8 +263,8 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, const Spread& initialSpread){
             limitPricesToRemove.push_back(price);
             continue;
         }
-        updatedSpread.lowestAsk = price;
-        marketOrderFilled = matchLimits(marketOrd, updatedSpread, book);
+        spread.lowestAsk = price;
+        marketOrderFilled = matchLimits(marketOrd, spread, book);
 
         if(marketOrderFilled){
             break;
@@ -276,9 +275,8 @@ bool Matcher::tryFillBuyMarket(Order& marketOrd, const Spread& initialSpread){
     return marketOrderFilled;
 }
 
-bool Matcher::tryFillSellMarket(Order& marketOrd, const Spread& initialSpread){
+bool Matcher::tryFillSellMarket(Order& marketOrd, Spread& spread){
     bool marketOrderFilled = false;
-    Spread updatedSpread = initialSpread;
     std::vector<long int> limitPricesToRemove{};
 
     // Iterate through buy limit price buckets, highest to lowest
@@ -290,9 +288,9 @@ bool Matcher::tryFillSellMarket(Order& marketOrd, const Spread& initialSpread){
             continue;
         }
 
-        updatedSpread.highestBid = price;
+        spread.highestBid = price;
 
-        marketOrderFilled = matchLimits(marketOrd, updatedSpread, it->second);
+        marketOrderFilled = matchLimits(marketOrd, spread, it->second);
         if(marketOrderFilled){
             break;
         }

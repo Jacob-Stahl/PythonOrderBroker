@@ -42,17 +42,17 @@ class Matcher{
         /// @param lastOrderTimestamp 
         void matchOrders();
 
-        /// @brief Tries to fill a buy market order as much as possible. Updates fill properties in matched orders
+        /// @brief Tries to fill a buy market order as much as possible. Updates fill properties in matched orders. Spread is also updated
         /// @param order 
-        /// @param initialSpread
+        /// @param spread
         /// @return true if filled completely
-        bool tryFillBuyMarket(Order& order, const Spread& initialSpread);
+        bool tryFillBuyMarket(Order& order, Spread& spread);
 
-        /// @brief Tries to fill a sell market order as much as possible. Updates fill properties in matched orders
+        /// @brief Tries to fill a sell market order as much as possible. Updates fill properties in matched orders.  Spread is also updated
         /// @param order 
-        /// @param initialSpread
+        /// @param spread
         /// @return true if filled completely
-        bool tryFillSellMarket(Order& order, const Spread& initialSpread);
+        bool tryFillSellMarket(Order& order, Spread& spread);
 
         /// @brief Remove limit orders from book at given price
         /// @param limitPricesToRemove 
