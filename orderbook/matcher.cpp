@@ -243,11 +243,8 @@ void Matcher::matchOrders()
         }
         
         if(filled){
-
             marketOrdersToRemove.push_back(ordIdx);
         }
-
-        //spread = getSpread();
     }
 
     removeIdxs(marketOrders, marketOrdersToRemove);
