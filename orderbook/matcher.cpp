@@ -63,9 +63,9 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
     // TODO mutex that locks the book until orders are added, and matched
     // TODO accumulate incoming orders with 1 thread (up to some limit); place in bulk and match with another thread
     // TODO how does this effect ordering?
-    // If multiple orders of the same type (LIMIT or MARKET) are placed in a row,
-    // We should be able to delay matching until the whole group is added without making a difference.
-
+    // Mark orders with group number, then compare timestamps within that group to prevent markets from being matched with future limits (only within that group)
+    // Does this screw with stops?
+    
     switch (order.type) {
         case LIMIT:
         case STOPLIMIT:

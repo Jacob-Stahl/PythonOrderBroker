@@ -49,6 +49,12 @@ struct Order{
     std::string symbol;
     /// @brief Order type (Market, Limit, Stop).
     OrdType type;
+
+    // TODO change timestamp to ordNum, then add new timestamp property for actual timestamps
+    // incriment order number inside matcher
+
+    // TODO add group number
+
     /// @brief Time the order was recieved by the service
     unsigned long timestamp;
     /// @brief Number of items filled. 
