@@ -317,3 +317,45 @@ TEST_F(MatcherTest, GetOrderCounts_ReturnsCorrectCounts){
     EXPECT_EQ(1, counts.at(STOP));
     EXPECT_EQ(0, counts.at(STOPLIMIT));
 }
+
+TEST_F(MatcherTest, CancelAllOrderTypes){
+    auto market    = newOrder(BUY, MARKET, 10);
+    auto limit     = newOrder(SELL, LIMIT, 10, 100);
+    auto stop      = newOrder(BUY, STOP, 10, 0, 50);
+    auto stoplimit = newOrder(SELL, STOPLIMIT, 10, 110, 120);
+
+    // Add without immediate matching
+    matcher.addOrder(market, false);
+    matcher.addOrder(limit, false);
+    matcher.addOrder(stop, false);
+    matcher.addOrder(stoplimit, false);
+
+    // Cancel all four
+    matcher.cancelOrder(market.ordId);
+    matcher.cancelOrder(limit.ordId);
+    matcher.cancelOrder(stop.ordId);
+    matcher.cancelOrder(stoplimit.ordId);
+
+    // Trigger matching/cleanup by placing small market orders
+    matcher.addOrder(newOrder(BUY, MARKET, 1));
+    matcher.addOrder(newOrder(SELL, MARKET, 1));
+
+    // Dump remaining orders and ensure canceled ones are not present
+    std::vector<Order> dumped;
+    matcher.dumpOrdersTo(dumped);
+
+    for (auto &o : dumped){
+        EXPECT_NE(o.ordId, market.ordId);
+        EXPECT_NE(o.ordId, limit.ordId);
+        EXPECT_NE(o.ordId, stop.ordId);
+        EXPECT_NE(o.ordId, stoplimit.ordId);
+    }
+
+    // Ensure no match involves any of the canceled orders
+    for (auto &m : notifier.matches){
+        EXPECT_NE(m.buyer.ordId, market.ordId);
+        EXPECT_NE(m.seller.ordId, limit.ordId);
+        EXPECT_NE(m.buyer.ordId, stop.ordId);
+        EXPECT_NE(m.seller.ordId, stoplimit.ordId);
+    }
+}

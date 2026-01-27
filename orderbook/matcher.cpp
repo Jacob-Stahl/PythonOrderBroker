@@ -79,7 +79,6 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
             std::logic_error("Order type not implemented!");
     }
 
-    orderLookupCache.insert({order.ordId, {order.price, order.type}});
     lastOrderTimestamp = order.timestamp;
     this->notifier->notifyOrderPlaced(order);
 
@@ -89,21 +88,7 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
 };
 
 void Matcher::cancelOrder(long ordId){
-
-    // https://en.cppreference.com/w/cpp/container/unordered_map/find.html
-    auto search = orderLookupCache.find(ordId);
-    if(search == orderLookupCache.end()){
-        // notify cancel failed
-    }
-    else{
-        // Find
-        // Cancel
-
-        // notify cancel was sucessful
-    }
-
-    // TODO add this to remove limits and markets
-    orderLookupCache.erase(ordId);
+    canceledOrderIds.insert(ordId);
 }
 
 void Matcher::dumpOrdersTo(std::vector<Order>& orders){
@@ -234,6 +219,14 @@ void Matcher::matchOrders()
     size_t ordIdx = -1;
     for(auto& order : marketOrders){
         ordIdx++;
+
+        // Ignore canceled order, and mark for removal
+        if(canceledOrderIds.find(order.ordId) != canceledOrderIds.end()){
+            canceledOrderIds.erase(order.ordId);
+            marketOrdersToRemove.push_back(ordIdx);
+            continue;
+        }
+
         // Skip attempts to match orders if we can
         if(spread.asksMissing && spread.bidsMissing) break;
         if(spread.asksMissing && order.side == BUY){
@@ -242,6 +235,7 @@ void Matcher::matchOrders()
         if(spread.bidsMissing && order.side == SELL){
             continue;
         }
+
         // Leave this order alone, and move to the next if it shouldn't be treated as a market order
         if (!order.treatAsMarket(spread)){
             continue;
@@ -354,16 +348,22 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
     bool marketOrdFilled = false;
     size_t limitOrdsSize = limitOrds.size();
 
-    if(limitOrdsSize == 0){
-        return false;
-    }
+    int ordIdx = -1;
+    for(auto& limitOrder : limitOrds){
+        ordIdx++;
 
-    for(size_t ordIdx = 0; ordIdx < limitOrdsSize; ordIdx++){
-        if(!limitOrds[ordIdx].treatAsLimit(spread)){
+        // Ignore canceled order, and mark for removal
+        if(canceledOrderIds.find(limitOrder.ordId) != canceledOrderIds.end()){
+            canceledOrderIds.erase(limitOrder.ordId);
+            limitsToRemove.push_back(ordIdx);
             continue;
         }
 
-        auto typeFilled = matchMarketAndLimit(marketOrd, limitOrds[ordIdx]);
+        if(!limitOrder.treatAsLimit(spread)){
+            continue;
+        }
+
+        auto typeFilled = matchMarketAndLimit(marketOrd, limitOrder);
         
         if (typeFilled.limit){
             limitsToRemove.push_back(ordIdx);
@@ -392,7 +392,6 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
         limitOrd.fill = limitOrd.qty;
         marketOrd.fill = marketOrd.fill + fillThisMatch;
         typeFilled.limit = true;
-        orderLookupCache.erase(limitOrd.ordId);
     }
     // Market order can be completely filled
     else if (limUnFill > markUnFill)
@@ -401,7 +400,6 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
         limitOrd.fill = limitOrd.fill + fillThisMatch;
         marketOrd.fill = marketOrd.qty;
         typeFilled.market = true;
-        orderLookupCache.erase(marketOrd.ordId);
     }
     // Market and Limit have the same unfilled qty; both can be filled
     else if (limUnFill == markUnFill){
@@ -409,8 +407,6 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
         limitOrd.fill = limitOrd.qty;
         marketOrd.fill = marketOrd.qty;
         typeFilled.both();
-        orderLookupCache.erase(marketOrd.ordId);
-        orderLookupCache.erase(limitOrd.ordId);
     }
 
     Match match = Match(marketOrd, limitOrd, fillThisMatch);
