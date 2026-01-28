@@ -42,6 +42,8 @@ class Matcher{
 
         bool validateOrder(const Order& order);
 
+        bool shouldCleanCanceledOrder(long ordId);
+
         void pushBackLimitOrder(const Order& order);
 
         /// @brief Try to find matches for all orders on the book

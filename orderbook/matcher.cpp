@@ -91,6 +91,19 @@ void Matcher::cancelOrder(long ordId){
     canceledOrderIds.insert(ordId);
 }
 
+bool Matcher::shouldCleanCanceledOrder(long ordId){
+    if(canceledOrderIds.size() == 0){
+        return false;
+    }
+
+    if(canceledOrderIds.find(ordId) != canceledOrderIds.end()){
+        canceledOrderIds.erase(ordId);
+        return true;
+    }
+
+    return false;
+}
+
 void Matcher::dumpOrdersTo(std::vector<Order>& orders){
     
     // Add market and stop orders
@@ -221,8 +234,7 @@ void Matcher::matchOrders()
         ordIdx++;
 
         // Ignore canceled order, and mark for removal
-        if(canceledOrderIds.find(order.ordId) != canceledOrderIds.end()){
-            canceledOrderIds.erase(order.ordId);
+        if(shouldCleanCanceledOrder(order.ordId)){
             marketOrdersToRemove.push_back(ordIdx);
             continue;
         }
@@ -353,8 +365,7 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
         ordIdx++;
 
         // Ignore canceled order, and mark for removal
-        if(canceledOrderIds.find(limitOrder.ordId) != canceledOrderIds.end()){
-            canceledOrderIds.erase(limitOrder.ordId);
+        if(shouldCleanCanceledOrder(limitOrder.ordId)){
             limitsToRemove.push_back(ordIdx);
             continue;
         }
