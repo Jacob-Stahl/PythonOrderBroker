@@ -224,7 +224,7 @@ bool Matcher::validateOrder(const Order& order){
 void Matcher::matchOrders()
 {
     if(marketOrders.empty()){
-        return; // Exit early if there are now market orders
+        return; // Exit early if there are no market orders
     }
     std::vector<size_t> marketOrdersToRemove{};
     Spread spread = getSpread();
