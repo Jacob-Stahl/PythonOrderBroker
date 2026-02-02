@@ -13,7 +13,9 @@ class Consumer : public Agent{
         };
 
     public:
-        Consumer(unsigned short, long);
+        Consumer::Consumer(unsigned short maxPrice_, long appetiteCoef_)
+            : lastConsumedTimestamp(0), maxPrice(maxPrice_), appetiteCoef(appetiteCoef_)
+        {}
         virtual Action policy(const Observation& Observation){
             // Cancel old order
             // Update limit price

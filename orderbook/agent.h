@@ -30,6 +30,7 @@ class Consumer : public Agent{
         unsigned short newLimitPrice(long currentTime);
 
     public:
+        Consumer(unsigned short maxPrice, long appetiteCoef);
         Action policy(const Observation& Observation) override;
 };
 
