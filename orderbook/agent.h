@@ -1,5 +1,7 @@
 #include "matcher.h"
+#include "match.h"
 #include <string>
+#include <functional>
 #include <unordered_map>
 
 struct Observation{
@@ -10,14 +12,15 @@ struct Observation{
 };
 
 struct Action{
-
+    std::function<void(const Match&)> matchCallback;
+    bool placeOrder;
+    Order order;
 };
 
 class Agent{
     public:
         virtual Action policy(const Observation& observation);
 };
-
 
 class Consumer : public Agent{
 

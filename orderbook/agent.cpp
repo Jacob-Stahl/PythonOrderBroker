@@ -1,13 +1,11 @@
 #include <agent.h>
 
 class Consumer : public Agent{
-
     private:
         bool hasBidBefore = false;
         long lastConsumedTimestamp;
         unsigned short maxPrice;
         long appetiteCoef;
-
 
         unsigned short newLimitPrice(long currentTime){       
             long timeSinceLastConsumption = lastConsumedTimestamp - currentTime;
@@ -15,15 +13,17 @@ class Consumer : public Agent{
         };
 
     public:
-
         Consumer(unsigned short, long);
-
         virtual Action policy(const Observation& Observation){
-            
+            // Cancel old order
+            // Update limit price
         }
 };
 
-unsigned short hunger(long timeSinceLastConsumption, unsigned short maxPrice, long appetiteCoef){
+unsigned short hunger(
+    long timeSinceLastConsumption, 
+    unsigned short maxPrice, 
+    long appetiteCoef){
     long sig = fast_sigmoid(timeSinceLastConsumption / appetiteCoef);
     return sig * maxPrice;
 };
