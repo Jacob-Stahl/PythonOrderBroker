@@ -50,10 +50,7 @@ struct Order{
     /// @brief Order type (Market, Limit, Stop).
     OrdType type;
 
-    // TODO change timestamp to ordNum, then add new timestamp property for actual timestamps
-    // incriment order number inside matcher
-
-    // TODO add group number
+    // TODO add group number for bulk matching
 
     /// @brief Time the order was recieved by the service
     unsigned long ordNum;
