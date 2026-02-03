@@ -78,4 +78,20 @@ struct Order{
         // A bit dangerous. unfilled should NEVER be negative
         return qty - fill;
     }
+
+    Order() = default;
+
+    Order(
+        Side side_,
+        OrdType type_,
+        unsigned short price_ = 0,
+        unsigned int qty_ = 0,
+        unsigned short stopPrice_ = 0
+    ){
+        side = side_;
+        type = type_;
+        price = price_;
+        qty = qty_;
+        stopPrice = stopPrice_;
+    }
 };
