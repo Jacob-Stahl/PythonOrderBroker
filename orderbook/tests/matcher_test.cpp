@@ -22,6 +22,8 @@ struct MatcherTest : ::testing::Test {
         o->type = type;
 
         ++lastOrdNum;
+
+        // This will cause a leak. Probably fine for a unit test helper
         return *o;
     }
 };
