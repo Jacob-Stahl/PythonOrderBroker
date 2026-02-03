@@ -12,8 +12,6 @@ struct Observation{
 };
 
 struct Action{
-    std::function<void(const Match&)> matchCallback;
-
     bool placeOrder;
     Order order;
 
@@ -22,8 +20,16 @@ struct Action{
 };
 
 class Agent{
+    private:
+        long traderId;
+
     public:
+        Agent(long);
+
         virtual Action policy(const Observation& observation);
+        virtual void matchFound(const Match& match);
+        virtual void orderPlaced(long orderId);
+        virtual void orderCanceled(long orderId);
 };
 
 class Consumer : public Agent{
