@@ -13,8 +13,12 @@ struct Observation{
 
 struct Action{
     std::function<void(const Match&)> matchCallback;
+
     bool placeOrder;
     Order order;
+
+    bool cancelOrder;
+    long doomedOrderId;
 };
 
 class Agent{
