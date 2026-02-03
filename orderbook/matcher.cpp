@@ -53,12 +53,14 @@ const std::unordered_map<OrdType, int> Matcher::getOrderCounts(){
 
 }
 
-void Matcher::addOrder(const Order& order, bool thenMatch)
+void Matcher::addOrder(Order& order, bool thenMatch)
 {   
     // Exit early and send notifications if order is invalid
     if(!validateOrder(order)){
         return;
     }
+
+    order.ordNum = ++lastOrdNum;
 
     // TODO mutex that locks the book until orders are added, and matched
     // TODO accumulate incoming orders with 1 thread (up to some limit); place in bulk and match with another thread
@@ -79,7 +81,7 @@ void Matcher::addOrder(const Order& order, bool thenMatch)
             std::logic_error("Order type not implemented!");
     }
 
-    lastOrderTimestamp = order.timestamp;
+    lastOrdNum = order.ordNum;
     this->notifier->notifyOrderPlaced(order);
 
     if(thenMatch){
@@ -157,14 +159,6 @@ void Matcher::pushBackLimitOrder(const Order& order){
 
 bool Matcher::validateOrder(const Order& order){
 
-    // Prevent old orders from being added after new ones.
-    if(order.timestamp < lastOrderTimestamp)
-    {
-        this->notifier->notifyOrderPlacementFailed(order, 
-            "Can't add order with a timestamp older than the last added order");
-        return false;
-    }
-
     // Prevent orders with 0 or negative prices or quantities from being added to the book
     if(order.qty < 1){
         this->notifier->notifyOrderPlacementFailed(order,
@@ -224,7 +218,7 @@ bool Matcher::validateOrder(const Order& order){
 void Matcher::matchOrders()
 {
     if(marketOrders.empty()){
-        return; // Exit early if there are no market orders
+        return; // Exit early if there are now market orders
     }
     std::vector<size_t> marketOrdersToRemove{};
     Spread spread = getSpread();

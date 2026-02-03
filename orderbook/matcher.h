@@ -30,7 +30,7 @@ struct OrderLookupCacheEntry{
 class Matcher{
 
     private:
-        unsigned long lastOrderTimestamp = 0;
+        unsigned long lastOrdNum = 0;
         
         // TODO: Research tree balancing and its effect on performance here
         //Order FIFO queues for different prices
@@ -47,7 +47,6 @@ class Matcher{
         void pushBackLimitOrder(const Order& order);
 
         /// @brief Try to find matches for all orders on the book
-        /// @param lastOrderTimestamp 
         void matchOrders();
 
         /// @brief Tries to fill a buy market order as much as possible. Updates fill properties in matched orders. Spread is also updated
@@ -91,7 +90,7 @@ class Matcher{
 
         /// @brief Add order to the book
         /// @param order 
-        void addOrder(const Order& order, bool thenMatch = true);
+        void addOrder(Order& order, bool thenMatch = true);
 
         void cancelOrder(long ordId);
         

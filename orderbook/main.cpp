@@ -74,7 +74,7 @@ class OrderFactory{
             o.stopPrice = stopPrice;
             o.symbol = "TEST";
             o.type = type;
-            o.timestamp = currentIdTimestamp;
+            o.ordNum = currentIdTimestamp;
 
             ++currentIdTimestamp;
             return o;

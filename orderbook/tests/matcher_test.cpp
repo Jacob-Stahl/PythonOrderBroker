@@ -8,22 +8,21 @@ struct MatcherTest : ::testing::Test {
     MockNotifier notifier;
     Matcher matcher{&notifier};
 
-    long int currentIdTimestamp = 1;
+    long int lastOrdNum = 1;
 
-    Order newOrder(Side side, OrdType type, long qty, long price = 0, long stopPrice = 0){
-        Order o{};
-        o.traderId = currentIdTimestamp;
-        o.ordId = currentIdTimestamp;
-        o.side = side;
-        o.qty = qty;
-        o.price = price;
-        o.stopPrice = stopPrice;
-        o.symbol = "TEST";
-        o.type = type;
-        o.timestamp = currentIdTimestamp;
+    Order& newOrder(Side side, OrdType type, long qty, long price = 0, long stopPrice = 0){
+        Order* o = new Order{};
+        o->traderId = lastOrdNum;
+        o->ordId = lastOrdNum;
+        o->side = side;
+        o->qty = qty;
+        o->price = price;
+        o->stopPrice = stopPrice;
+        o->symbol = "TEST";
+        o->type = type;
 
-        ++currentIdTimestamp;
-        return o;
+        ++lastOrdNum;
+        return *o;
     }
 };
 

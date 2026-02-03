@@ -56,7 +56,7 @@ struct Order{
     // TODO add group number
 
     /// @brief Time the order was recieved by the service
-    unsigned long timestamp;
+    unsigned long ordNum;
     /// @brief Number of items filled. 
     unsigned int fill = 0;
     /// @brief Calculate the total amount of the order.
