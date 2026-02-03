@@ -28,14 +28,8 @@ class Consumer : public Agent{
             }
             
             auto price = newLimitPrice(observation.timestamp);
-            Order order(BUY, LIMIT, price, 1);
-            
-            return Action{
-                true,
-                order,
-                true,
-                lastPlacedOrderId
-            };
+            Order order(BUY, LIMIT, price, 1);          
+            return Action{order, lastPlacedOrderId};
 
         }
 

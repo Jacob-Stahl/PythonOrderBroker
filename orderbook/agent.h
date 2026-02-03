@@ -12,11 +12,25 @@ struct Observation{
 };
 
 struct Action{
-    bool placeOrder;
+    bool placeOrder = false;
     Order order;
 
-    bool cancelOrder;
+    bool cancelOrder = false;
     long doomedOrderId;
+
+    Action() = default;
+
+    Action(Order& order_){
+        order = order_,
+        placeOrder = true;
+    }
+
+    Action(Order& order_, long doomedOrderId_){
+        placeOrder = true;
+        order = order_;
+        cancelOrder = true;
+        doomedOrderId = doomedOrderId_;
+    }
 };
 
 class Agent{
