@@ -21,7 +21,8 @@ class Consumer : public Agent{
         };
 
     public:
-        Consumer(long traderId_, unsigned short maxPrice_, long appetiteCoef_, std::string asset_): 
+        Consumer(long traderId_, std::string asset_, unsigned short maxPrice_, 
+            long appetiteCoef_): 
             Agent(traderId_), 
             lastConsumed(0), 
             maxPrice(maxPrice_), 
@@ -57,23 +58,30 @@ class Producer : public Agent{
     unsigned short preferedPrice;
     unsigned int qtyPerTick = 1;
 
-    virtual Action policy(const Observation& observation) override {
-        const Spread& assetSpread = observation.assetSpreads.find(asset)->second;
+    public:
+        Producer(long traderId_, std::string asset_, unsigned short preferedPrice_):
+            Agent(traderId_),
+            asset(asset_),
+            preferedPrice(preferedPrice_)
+        {}
 
-        // Cease production if there are no bids
-        if(assetSpread.bidsMissing){
-            return Action();
-        }
+        virtual Action policy(const Observation& observation) override {
+            const Spread& assetSpread = observation.assetSpreads.find(asset)->second;
 
-        if(assetSpread.highestBid > preferedPrice){
-            ++qtyPerTick;
-        }
-        else if(assetSpread.highestBid < preferedPrice){
-            --qtyPerTick;
-        }
+            // Cease production if there are no bids
+            if(assetSpread.bidsMissing){
+                return Action();
+            }
 
-        Order order(asset, SELL, MARKET, 0, qtyPerTick);
-        return Action{order};
-    }
+            if(assetSpread.highestBid > preferedPrice){
+                ++qtyPerTick;
+            }
+            else if(assetSpread.highestBid < preferedPrice){
+                --qtyPerTick;
+            }
+
+            Order order(asset, SELL, MARKET, 0, qtyPerTick);
+            return Action{order};
+        }
 };
 

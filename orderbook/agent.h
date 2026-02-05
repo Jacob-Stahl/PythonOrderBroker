@@ -60,7 +60,8 @@ class Consumer : public Agent{
         unsigned short sigmoidHunger(tick timeSinceLastConsumption);
 
     public:
-        Consumer(unsigned short maxPrice, tick appetiteCoef, std::string asset);
+        Consumer(long traderId_, std::string asset_, 
+            unsigned short maxPrice, tick appetiteCoef);
         Action policy(const Observation& Observation) override;
 };
 
@@ -70,7 +71,8 @@ class Producer : public Agent{
     unsigned int qtyPerTick = 1;
 
     public:
-        Producer(unsigned short preferedPrice, std::string asset);
+        Producer(long traderId_, std::string asset, 
+            unsigned short preferedPrice);
         virtual Action policy(const Observation& observation);
 };
 
