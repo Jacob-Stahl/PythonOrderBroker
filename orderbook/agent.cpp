@@ -1,51 +1,51 @@
 #include <agent.h>
+#include "tick.h"
 
 class Consumer : public Agent{
     private:
-        long lastConsumedTimestamp = 0;
+        tick lastConsumed;
         long lastPlacedOrderId;
-
         unsigned short maxPrice;
-        long appetiteCoef;
+        tick ticksUntilHalfHunger;
 
-        const unsigned short newLimitPrice(long currentTime){       
-            long timeSinceLastConsumption = lastConsumedTimestamp - currentTime;
-            return hunger(timeSinceLastConsumption, maxPrice, appetiteCoef);
+        unsigned short sigmoidHunger(tick timeSinceLastConsumption){
+            long sig = fast_sigmoid(timeSinceLastConsumption / ticksUntilHalfHunger);
+            return sig * maxPrice;
+        };
+
+        const unsigned short newLimitPrice(tick now){       
+            tick timeSinceLastConsumption = lastConsumed - now;
+            return sigmoidHunger(timeSinceLastConsumption);
         };
 
     public:
         Consumer(long traderId_, unsigned short maxPrice_, long appetiteCoef_): 
             Agent(traderId_), 
-            lastConsumedTimestamp(0), 
+            lastConsumed(0), 
             maxPrice(maxPrice_), 
-            appetiteCoef(appetiteCoef_)
+            ticksUntilHalfHunger(appetiteCoef_)
         {}
         virtual Action policy(const Observation& observation){
 
             // Don't start hungery
-            if(lastConsumedTimestamp == 0){
-                lastConsumedTimestamp = observation.timestamp;
+            if(lastConsumed == tick(0)){
+                lastConsumed = observation.time;
             }
             
-            auto price = newLimitPrice(observation.timestamp);
+            auto price = newLimitPrice(observation.time);
+
+            // qty always set to 1 to avoid partial fills
             Order order(BUY, LIMIT, price, 1);          
             return Action{order, lastPlacedOrderId};
 
         }
 
-        virtual void orderPlaced(long orderId) override{
+        virtual void orderPlaced(long orderId, tick now) override{
             lastPlacedOrderId = orderId;
         }
 
-        virtual void matchFound(const Match& match){
-            // TODO, what do we set lastConsumedTimestamp too?
+        virtual void matchFound(const Match& match, tick now){
+            lastConsumed = now;
         }
 };
 
-unsigned short hunger(
-    long timeSinceLastConsumption, 
-    unsigned short maxPrice, 
-    long appetiteCoef){
-    long sig = fast_sigmoid(timeSinceLastConsumption / appetiteCoef);
-    return sig * maxPrice;
-};

@@ -5,9 +5,10 @@
 #include <string>
 #include <functional>
 #include <unordered_map>
+#include "tick.h"
 
 struct Observation{
-    long timestamp;
+    tick time;
 
     /// @brief asset - Spread
     std::unordered_map<std::string, Spread> assetSpreads;
@@ -43,25 +44,25 @@ class Agent{
         Agent(long);
 
         virtual Action policy(const Observation& observation);
-        virtual void matchFound(const Match& match);
-        virtual void orderPlaced(long orderId);
-        virtual void orderCanceled(long orderId);
+
+        virtual void matchFound(const Match& match, tick now);
+        virtual void orderPlaced(long orderId, tick now);
+        virtual void orderCanceled(long orderId, tick now);
 };
 
 class Consumer : public Agent{
 
     private:
-        long lastConsumedTimestamp;
+        long lastConsumed;
 
-        unsigned short newLimitPrice(long currentTime);
+        unsigned short newLimitPrice(tick now);
+        unsigned short sigmoidHunger(tick timeSinceLastConsumption);
 
     public:
-        Consumer(unsigned short maxPrice, long appetiteCoef);
+        Consumer(unsigned short maxPrice, tick appetiteCoef);
         Action policy(const Observation& Observation) override;
 };
 
 long fast_sigmoid(long x) {
     return x / (1 + std::abs(x));
 };
-
-unsigned short hunger(long timeSinceLastConsumption, unsigned short maxPrice, long appetiteCoef);
