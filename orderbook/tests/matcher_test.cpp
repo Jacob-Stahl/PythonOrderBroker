@@ -18,7 +18,7 @@ struct MatcherTest : ::testing::Test {
         o->qty = qty;
         o->price = price;
         o->stopPrice = stopPrice;
-        o->symbol = "TEST";
+        o->asset = "TEST";
         o->type = type;
 
         ++lastOrdNum;

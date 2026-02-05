@@ -72,7 +72,7 @@ class OrderFactory{
             o.qty = qty;
             o.price = price;
             o.stopPrice = stopPrice;
-            o.symbol = "TEST";
+            o.asset = "TEST";
             o.type = type;
             o.ordNum = currentIdTimestamp;
 

@@ -45,8 +45,8 @@ struct Order{
     unsigned short price;
     /// @brief Stop price of the order.
     unsigned short stopPrice;
-    /// @brief Symbol
-    std::string symbol;
+    /// @brief Asset
+    std::string asset;
     /// @brief Order type (Market, Limit, Stop).
     OrdType type;
 
@@ -82,12 +82,14 @@ struct Order{
     Order() = default;
 
     Order(
+        std::string asset_,
         Side side_,
         OrdType type_,
         unsigned short price_ = 0,
         unsigned int qty_ = 0,
         unsigned short stopPrice_ = 0
     ){
+        asset = asset_;
         side = side_;
         type = type_;
         price = price_;

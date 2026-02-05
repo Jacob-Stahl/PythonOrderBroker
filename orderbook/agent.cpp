@@ -1,8 +1,10 @@
 #include <agent.h>
+#include <string>
 #include "tick.h"
 
 class Consumer : public Agent{
     private:
+        std::string asset;
         tick lastConsumed;
         long lastPlacedOrderId;
         unsigned short maxPrice;
@@ -19,11 +21,12 @@ class Consumer : public Agent{
         };
 
     public:
-        Consumer(long traderId_, unsigned short maxPrice_, long appetiteCoef_): 
+        Consumer(long traderId_, unsigned short maxPrice_, long appetiteCoef_, std::string asset_): 
             Agent(traderId_), 
             lastConsumed(0), 
             maxPrice(maxPrice_), 
-            ticksUntilHalfHunger(appetiteCoef_)
+            ticksUntilHalfHunger(appetiteCoef_),
+            asset(asset_)
         {}
         virtual Action policy(const Observation& observation){
 
@@ -35,7 +38,7 @@ class Consumer : public Agent{
             auto price = newLimitPrice(observation.time);
 
             // qty always set to 1 to avoid partial fills
-            Order order(BUY, LIMIT, price, 1);          
+            Order order(asset, BUY, LIMIT, price, 1);          
             return Action{order, lastPlacedOrderId};
 
         }

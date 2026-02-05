@@ -53,13 +53,14 @@ class Agent{
 class Consumer : public Agent{
 
     private:
+        std::string asset;
         long lastConsumed;
 
         unsigned short newLimitPrice(tick now);
         unsigned short sigmoidHunger(tick timeSinceLastConsumption);
 
     public:
-        Consumer(unsigned short maxPrice, tick appetiteCoef);
+        Consumer(unsigned short maxPrice, tick appetiteCoef, std::string asset);
         Action policy(const Observation& Observation) override;
 };
 
