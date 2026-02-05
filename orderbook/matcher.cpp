@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 // TODO: consider STOPLIMITS in spread? does this create a chicken and egg problem?
+// TODO: is it worth removing canceled orders from spread?
 const Spread Matcher::getSpread(){
 
     bool bidsMissing = true;
