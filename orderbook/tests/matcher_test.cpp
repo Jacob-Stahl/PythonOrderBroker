@@ -5,7 +5,7 @@
 #include "order.h"
 
 struct MatcherTest : ::testing::Test {
-    MockNotifier notifier;
+    InMemoryNotifier notifier;
     Matcher matcher{&notifier};
 
     long int lastOrdNum = 1;
@@ -195,7 +195,7 @@ TEST_F(MatcherTest, MatchStopLimits_MatchesAndSpreadAreCorrect){
     }
 
     // Check Notifier
-    EXPECT_EQ(1, notifier.failedOrderPlacements.size());
+    EXPECT_EQ(1, notifier.placementFailedOrders.size());
     EXPECT_EQ(7, notifier.placedOrders.size());
     EXPECT_EQ(3, notifier.matches.size());
 
@@ -310,7 +310,7 @@ TEST_F(MatcherTest, GetOrderCounts_ReturnsCorrectCounts){
 
     EXPECT_EQ(1, notifier.matches.size());
     EXPECT_EQ(5, notifier.placedOrders.size());
-    EXPECT_EQ(0, notifier.failedOrderPlacements.size());
+    EXPECT_EQ(0, notifier.placementFailedOrders.size());
 
     auto counts = matcher.getOrderCounts();
     EXPECT_EQ(0, counts.at(MARKET));

@@ -162,7 +162,7 @@ bool Matcher::validateOrder(const Order& order){
 
     // Prevent orders with 0 or negative prices or quantities from being added to the book
     if(order.qty < 1){
-        this->notifier->notifyFailedOrderPlacement(order,
+        this->notifier->notifyOrderPlacementFailed(order,
             "Can't add order with qty less than 1");
         return false;
     }
@@ -172,7 +172,7 @@ bool Matcher::validateOrder(const Order& order){
         case STOP:
         case STOPLIMIT:
         if (order.stopPrice < 1) {
-            this->notifier->notifyFailedOrderPlacement(order,
+            this->notifier->notifyOrderPlacementFailed(order,
                 "Can't add stop order with stopPrice less than 1");
             return false;
         }
@@ -184,7 +184,7 @@ bool Matcher::validateOrder(const Order& order){
         case LIMIT:
         case STOPLIMIT:
         if (order.price < 1) {
-            this->notifier->notifyFailedOrderPlacement(order,
+            this->notifier->notifyOrderPlacementFailed(order,
                 "Can't add limit order with price less than 1");
             return false;
         }
@@ -198,14 +198,14 @@ bool Matcher::validateOrder(const Order& order){
         {
             case SELL:
                 if(order.stopPrice < order.price){
-                    this->notifier->notifyFailedOrderPlacement(order, 
+                    this->notifier->notifyOrderPlacementFailed(order, 
                         "Stop-Limit SELL can't have a stop price below the limit price");
                     return false;
                 }
                 break;
             case BUY:
                 if(order.stopPrice > order.price){
-                    this->notifier->notifyFailedOrderPlacement(order, 
+                    this->notifier->notifyOrderPlacementFailed(order, 
                         "Stop-Limit BUY can't have a stop price above the limit price");
                     return false;
                 }

@@ -114,7 +114,7 @@ class OrderFactory{
 
 void benchmarkMatcher(){
 
-    MockNotifier notifier;
+    InMemoryNotifier notifier;
     Matcher matcher{&notifier};
     OrderFactory ordFactory{};
 
@@ -165,6 +165,6 @@ void benchmarkMatcher(){
     }
     std::cout << "Done!" << std::endl;
     std::cout << "Matches Found: " << notifier.matches.size() << std::endl;
-    std::cout << "Orders Rejected: " << notifier.failedOrderPlacements.size() << std::endl;
+    std::cout << "Orders Rejected: " << notifier.placementFailedOrders.size() << std::endl;
 
 };
