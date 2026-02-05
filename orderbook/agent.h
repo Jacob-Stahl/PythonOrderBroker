@@ -45,9 +45,9 @@ class Agent{
 
         virtual Action policy(const Observation& observation);
 
-        virtual void matchFound(const Match& match, tick now);
-        virtual void orderPlaced(long orderId, tick now);
-        virtual void orderCanceled(long orderId, tick now);
+        virtual void matchFound(const Match& match, tick now){};
+        virtual void orderPlaced(long orderId, tick now){};
+        virtual void orderCanceled(long orderId, tick now){};
 };
 
 class Consumer : public Agent{
@@ -62,6 +62,16 @@ class Consumer : public Agent{
     public:
         Consumer(unsigned short maxPrice, tick appetiteCoef, std::string asset);
         Action policy(const Observation& Observation) override;
+};
+
+class Producer : public Agent{
+    std::string asset;
+    unsigned short preferedPrice;
+    unsigned int qtyPerTick = 1;
+
+    public:
+        Producer(unsigned short preferedPrice, std::string asset);
+        virtual Action policy(const Observation& observation);
 };
 
 long fast_sigmoid(long x) {

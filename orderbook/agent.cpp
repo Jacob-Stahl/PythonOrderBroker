@@ -52,3 +52,28 @@ class Consumer : public Agent{
         }
 };
 
+class Producer : public Agent{
+    std::string asset;
+    unsigned short preferedPrice;
+    unsigned int qtyPerTick = 1;
+
+    virtual Action policy(const Observation& observation) override {
+        const Spread& assetSpread = observation.assetSpreads.find(asset)->second;
+
+        // Cease production if there are no bids
+        if(assetSpread.bidsMissing){
+            return Action();
+        }
+
+        if(assetSpread.highestBid > preferedPrice){
+            ++qtyPerTick;
+        }
+        else if(assetSpread.highestBid < preferedPrice){
+            --qtyPerTick;
+        }
+
+        Order order(asset, SELL, MARKET, 0, qtyPerTick);
+        return Action{order};
+    }
+};
+
