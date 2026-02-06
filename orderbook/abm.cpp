@@ -18,7 +18,7 @@ void ABM::addMatcherIfNeeded(const std::string& asset){
 void ABM::routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
         std::vector<Match>& matches){
     
-
+    // TODO: This sort should be moved so its not repeated constantly. But where?
     std::sort(agents.begin(), agents.end(), 
         [](const std::unique_ptr<Agent>& a,
         const std::unique_ptr<Agent>& b)
@@ -29,8 +29,7 @@ void ABM::routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
             [](const Match& a, const Match& b)
             {return a.buyer.traderId < b.buyer.traderId; });
 
-    // TODO
-
+    // TODO:
     // Route matches to buyers
     // Sort by sellers.
     // Route matches to sellers
@@ -80,7 +79,7 @@ void ABM::simStep(){
             else // I'm trusting if an order is not placed, it MUST be in placementFailedOrders
             {
                 notifier.placementFailedOrders.pop_back();
-                agent->orderCanceled(order.ordId, tickCounter);
+                // TODO: notify placement failed?
             }
         }
     };
