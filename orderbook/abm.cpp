@@ -45,6 +45,8 @@ void ABM::simLoop(){
     while(running){
         simStep();
         ++tickCounter;
+
+        // TODO: Record depths of each matcher?
     }
 
     // Tear down? Dump results?
