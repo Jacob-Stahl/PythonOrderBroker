@@ -7,15 +7,20 @@
 
 class ABM{
     std::vector<std::unique_ptr<Agent>> agents;
-    unsigned long tickCounter = 0;
+    tick tickCounter{0};
+    bool running = true;
 
     /// @brief Asset - Matcher
     std::unordered_map<std::string, Matcher> orderMatchers;
+    InMemoryNotifier notifier{};
+
+    void addMatcherIfNeeded(const std::string& asset);
+    const Observation observe();
+    void execute(const std::vector<Action>& actions);
+    void simStep();
 
     public:
-
         ABM() = default;
-
         void simLoop();
 
 };
