@@ -12,7 +12,6 @@
 // TODO: consider STOPLIMITS in spread? does this create a chicken and egg problem?
 // TODO: is it worth removing canceled orders from spread?
 const Spread Matcher::getSpread(){
-
     bool bidsMissing = true;
     bool asksMissing = true;
 
@@ -37,6 +36,42 @@ const Spread Matcher::getSpread(){
     return Spread{bidsMissing, asksMissing, bid, ask};
 }
 
+const Depth Matcher::getDepth(){
+    const int maxBinsPerSide = 30;
+    Depth depth;
+
+    // Bids: iterate highest -> lowest, accumulate cumulative qty
+    unsigned int cumQty = 0;
+    int bins = 0;
+    for (auto it = buyLimits.rbegin(); it != buyLimits.rend() && bins < maxBinsPerSide; ++it){
+        unsigned short price = it->first;
+        unsigned int totalQtyAtPrice = 0;
+        for (auto& o : it->second){
+            totalQtyAtPrice += o.unfilled();
+        }
+        if(totalQtyAtPrice == 0) continue;
+        cumQty += totalQtyAtPrice;
+        depth.bidBins.push_back(PriceBin{price, cumQty});
+        ++bins;
+    }
+
+    // Asks: iterate lowest -> highest, accumulate cumulative qty
+    cumQty = 0;
+    bins = 0;
+    for (auto& [price, book] : sellLimits){
+        if(bins >= maxBinsPerSide) break;
+        unsigned int totalQtyAtPrice = 0;
+        for (auto& o : book){
+            totalQtyAtPrice += o.unfilled();
+        }
+        if(totalQtyAtPrice == 0) continue;
+        cumQty += totalQtyAtPrice;
+        depth.askBins.push_back(PriceBin{price, cumQty});
+        ++bins;
+    }
+
+    return depth;
+}
 const std::unordered_map<OrdType, int> Matcher::getOrderCounts(){
     std::unordered_map<OrdType, int> counts{
         {MARKET, 0},

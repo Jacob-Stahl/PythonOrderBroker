@@ -10,6 +10,16 @@
 #include <stdexcept>
 #include <unordered_map>
 
+struct PriceBin{
+    unsigned short price;
+    unsigned int totalQty;
+};
+
+struct Depth{
+    std::vector<PriceBin> bidBins;
+    std::vector<PriceBin> askBins;
+};
+
 struct TypeFilled{
     bool market = false;
     bool limit = false;
@@ -94,6 +104,7 @@ class Matcher{
         void dumpOrdersTo(std::vector<Order>& orders);
 
         const Spread getSpread();
+        const Depth getDepth();
         const std::unordered_map<OrdType, int> getOrderCounts();
 };
 

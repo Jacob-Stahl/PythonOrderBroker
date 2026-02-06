@@ -360,3 +360,32 @@ TEST_F(MatcherTest, CancelAllOrderTypes){
         EXPECT_NE(m.seller.ordId, stoplimit.ordId);
     }
 }
+
+TEST_F(MatcherTest, GetDepth_ReturnsCumulativeBins){
+    // Setup: two buy price levels and two sell price levels
+    auto buyLow  = newOrder(BUY,  LIMIT, 40,  90);
+    auto buyHigh = newOrder(BUY,  LIMIT, 50, 100);
+    auto sellLow = newOrder(SELL, LIMIT, 20, 110);
+    auto sellHigh= newOrder(SELL, LIMIT, 30, 120);
+
+    matcher.addOrder(buyLow);
+    matcher.addOrder(buyHigh);
+    matcher.addOrder(sellLow);
+    matcher.addOrder(sellHigh);
+
+    Depth d = matcher.getDepth();
+
+    // Bids should be sorted highest -> lowest and cumulative
+    ASSERT_EQ(2u, d.bidBins.size());
+    EXPECT_EQ(100u,  d.bidBins[0].price);      // first bin price 100
+    EXPECT_EQ(50u,   d.bidBins[0].totalQty);  // cumulative at 100 = 50
+    EXPECT_EQ(90u,   d.bidBins[1].price);     // next price 90
+    EXPECT_EQ(90u,   d.bidBins[1].totalQty);  // cumulative at 90 = 50 + 40
+
+    // Asks should be sorted lowest -> highest and cumulative
+    ASSERT_EQ(2u, d.askBins.size());
+    EXPECT_EQ(110u, d.askBins[0].price);      // first ask price 110
+    EXPECT_EQ(20u,  d.askBins[0].totalQty);  // cumulative at 110 = 20
+    EXPECT_EQ(120u, d.askBins[1].price);     // next price 120
+    EXPECT_EQ(50u,  d.askBins[1].totalQty);  // cumulative at 120 = 20 + 30
+}
