@@ -24,7 +24,7 @@ void ABM::routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
         const std::unique_ptr<Agent>& b)
         {return a->traderId < b->traderId; });
 
-    // Sort by buy first
+    // Sort by buyers first
     std::sort(matches.begin(), matches.end(),
             [](const Match& a, const Match& b)
             {return a.buyer.traderId < b.buyer.traderId; });
@@ -34,6 +34,10 @@ void ABM::routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
     // Route matches to buyers
     // Sort by sellers.
     // Route matches to sellers
+    
+    
+    // Empty matches.
+    matches.clear();
 };
 
 void ABM::simLoop(){
