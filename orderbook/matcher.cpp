@@ -37,7 +37,7 @@ const Spread Matcher::getSpread(){
 }
 
 const Depth Matcher::getDepth(){
-    const int maxBinsPerSide = 30;
+    const int maxBinsPerSide = 300;
     Depth depth;
 
     // Bids: iterate highest -> lowest, accumulate cumulative qty
