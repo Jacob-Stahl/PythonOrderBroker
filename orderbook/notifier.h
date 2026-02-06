@@ -4,6 +4,8 @@
 #include "match.h"
 #include <vector>
 
+// TODO: add cancelation notification
+
 class INotifier{
     public:
     virtual void notifyOrderPlaced(const Order& order) = 0;

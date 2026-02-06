@@ -16,7 +16,6 @@ class ABM{
 
     void addMatcherIfNeeded(const std::string& asset);
     const Observation observe();
-    void execute(const std::vector<Action>& actions);
     void simStep();
 
     public:

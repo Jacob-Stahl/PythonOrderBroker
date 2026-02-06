@@ -9,23 +9,6 @@ const Observation ABM::observe(){
     return o;
 };
 
-void ABM::execute(const std::vector<Action>& actions){
-    // Send all cancelations first
-    for(auto& action : actions){
-        if(!action.cancelOrder) continue;
-        for(auto& it : orderMatchers){
-            it.second.cancelOrder(action.doomedOrderId);
-        }
-    }
-
-    // Place all orders next
-    for(auto& action : actions){
-        if(!action.placeOrder) continue;
-        Order order{action.order};
-        addMatcherIfNeeded(order.asset);
-        orderMatchers.at(order.asset).addOrder(order);
-    }
-}
 
 void ABM::addMatcherIfNeeded(const std::string& asset){
     if(orderMatchers.find(asset) == orderMatchers.end()){
@@ -48,15 +31,24 @@ void ABM::simStep(){
     // Get Observation
     const Observation observation = observe();
 
-    // Get Actions from Agents
-    std::vector<Action> actions{};
-    actions.reserve(agents.size());
+    // Execute actions for all agents
     for(auto& agent: agents){
-        actions.push_back(agent->policy(observation));
-    }
+        auto action = agent->policy(observation);
+        
+        if(action.cancelOrder){
+            for(auto& it : orderMatchers){
+                it.second.cancelOrder(action.doomedOrderId);
+            };
+            // TODO route cancelation notification
+            // At most, one cancelation should happen.
+        };
 
-    // Excecute all Actions
-    execute(actions);
+        if(action.placeOrder){
+            Order order{action.order};
+            addMatcherIfNeeded(order.asset);
+            orderMatchers.at(order.asset).addOrder(order);
 
-    // TODO: Route notifications back to agents.
+            // TODO check if order was placed or failed, then route notificaitons
+        }
+    };
 };
