@@ -21,11 +21,6 @@ struct TypeFilled{
         }
 };
 
-struct OrderLookupCacheEntry{
-    unsigned short price;
-    OrdType type;
-};
-
 /// @brief Processes orders for a single symbol
 class Matcher{
 
