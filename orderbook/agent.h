@@ -37,10 +37,8 @@ struct Action{
 };
 
 class Agent{
-    private:
-        long traderId;
-
     public:
+        const long traderId;
         Agent(long);
 
         virtual Action policy(const Observation& observation);

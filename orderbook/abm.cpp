@@ -13,7 +13,28 @@ void ABM::addMatcherIfNeeded(const std::string& asset){
     if(orderMatchers.find(asset) == orderMatchers.end()){
         orderMatchers[asset] = Matcher(&notifier);
     }
-}
+};
+
+void ABM::routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
+        std::vector<Match>& matches){
+    
+
+    std::sort(agents.begin(), agents.end(), 
+        [](const std::unique_ptr<Agent>& a,
+        const std::unique_ptr<Agent>& b)
+        {return a->traderId < b->traderId; });
+
+    // Sort by buy first
+    std::sort(matches.begin(), matches.end(),
+            [](const Match& a, const Match& b)
+            {return a.buyer.traderId < b.buyer.traderId; });
+
+    // TODO
+
+    // Route matches to buyers
+    // Sort by sellers.
+    // Route matches to sellers
+};
 
 void ABM::simLoop(){
     // Setup?
@@ -44,7 +65,9 @@ void ABM::simStep(){
         if(action.placeOrder){
             Order order{action.order};
             addMatcherIfNeeded(order.asset);
-            orderMatchers.at(order.asset).addOrder(order);
+
+            // Don't match until the last agent
+            orderMatchers.at(order.asset).addOrder(order, agent == agents.back());
             
             if(notifier.placedOrders.back().ordId == order.ordId){
                 notifier.placedOrders.pop_back();
@@ -58,6 +81,5 @@ void ABM::simStep(){
         }
     };
 
-    // TODO route match notifications. 
-    // if agents and matchs are sorted by traderId, it makes this easier
+    routeMatches(agents, notifier.matches);
 };

@@ -15,6 +15,8 @@ class ABM{
     InMemoryNotifier notifier{};
 
     void addMatcherIfNeeded(const std::string& asset);
+    void routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
+        std::vector<Match>& matches);
     const Observation observe();
     void simStep();
 
