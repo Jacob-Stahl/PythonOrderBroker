@@ -9,7 +9,6 @@ const Observation ABM::observe(){
     return o;
 };
 
-
 void ABM::addMatcherIfNeeded(const std::string& asset){
     if(orderMatchers.find(asset) == orderMatchers.end()){
         orderMatchers[asset] = Matcher(&notifier);
@@ -39,16 +38,26 @@ void ABM::simStep(){
             for(auto& it : orderMatchers){
                 it.second.cancelOrder(action.doomedOrderId);
             };
-            // TODO route cancelation notification
-            // At most, one cancelation should happen.
+            agent->orderCanceled(action.doomedOrderId, tickCounter);
         };
 
         if(action.placeOrder){
             Order order{action.order};
             addMatcherIfNeeded(order.asset);
             orderMatchers.at(order.asset).addOrder(order);
-
-            // TODO check if order was placed or failed, then route notificaitons
+            
+            if(notifier.placedOrders.back().ordId == order.ordId){
+                notifier.placedOrders.pop_back();
+                agent->orderPlaced(order.ordId, tickCounter);
+            }
+            else // I'm trusting if an order is not placed, it MUST be in placementFailedOrders
+            {
+                notifier.placementFailedOrders.pop_back();
+                agent->orderCanceled(order.ordId, tickCounter);
+            }
         }
     };
+
+    // TODO route match notifications. 
+    // if agents and matchs are sorted by traderId, it makes this easier
 };

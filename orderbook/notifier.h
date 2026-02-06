@@ -4,7 +4,7 @@
 #include "match.h"
 #include <vector>
 
-// TODO: add cancelation notification
+// TODO: add cancelation notifications?
 
 class INotifier{
     public:
