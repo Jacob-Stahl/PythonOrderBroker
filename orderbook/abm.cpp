@@ -87,8 +87,8 @@ void ABM::simStep(){
             Order order{action.order};
             addMatcherIfNeeded(order.asset);
 
-            // Don't match until the last agent
-            orderMatchers.at(order.asset).addOrder(order, agent == agents.back());
+            // TODO: delay matching until all orders are added?
+            orderMatchers.at(order.asset).addOrder(order);
             
             if(notifier.placedOrders.back().ordId == order.ordId){
                 notifier.placedOrders.pop_back();
