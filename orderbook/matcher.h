@@ -107,8 +107,3 @@ class Matcher{
         const Depth getDepth();
         const std::unordered_map<OrdType, int> getOrderCounts();
 };
-
-/// @brief Remove provided elements from an Order vec
-/// @param orders
-/// @param idxToRemove 
-void removeIdxs(std::vector<Order>& orders, const std::vector<size_t>& idxToRemove);

@@ -1,3 +1,4 @@
+#include "utils.h"
 #include "order.h"
 #include "matcher.h"
 #include <vector>
@@ -308,7 +309,7 @@ void Matcher::matchOrders()
         }
     }
 
-    removeIdxs(marketOrders, marketOrdersToRemove);
+    removeIdxs<Order>(marketOrders, marketOrdersToRemove);
 };
 
 bool Matcher::tryFillBuyMarket(Order& marketOrd, Spread& spread){
@@ -416,7 +417,7 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
         }
     }
 
-    removeIdxs(limitOrds, limitsToRemove);
+    removeIdxs<Order>(limitOrds, limitsToRemove);
     return marketOrdFilled;
 }
 
@@ -453,32 +454,4 @@ TypeFilled Matcher::matchMarketAndLimit(Order& marketOrd, Order& limitOrd){
     Match match = Match(marketOrd, limitOrd, fillThisMatch);
     this->notifier->notifyOrderMatched(match);
     return typeFilled;
-}
-
-void removeIdxs(std::vector<Order>& orders, const std::vector<size_t>& idxToRemove){
-    if(idxToRemove.empty()) return;
-
-    size_t write = 0;
-    size_t prev = 0;
-    size_t n = orders.size();
-
-    for(size_t i = 0; i < idxToRemove.size(); ++i){
-        int rem = idxToRemove[i];
-        if(rem < 0) continue;
-        size_t remPos = static_cast<size_t>(rem);
-        if(remPos >= n) break;
-
-        // move the block [prev, remPos) to write
-        for(size_t k = prev; k < remPos; ++k){
-            orders[write++] = std::move(orders[k]);
-        }
-        prev = remPos + 1; // skip the removed index
-    }
-
-    // move the tail [prev, n)
-    for(size_t k = prev; k < n; ++k){
-        orders[write++] = std::move(orders[k]);
-    }
-
-    orders.resize(write);
 }
