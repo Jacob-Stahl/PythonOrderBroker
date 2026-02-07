@@ -58,6 +58,7 @@ TEST_F(ABMTest, RemoveAgentsBasedOnId) {
 
 class MockProducerAgent : public Agent {
 public:
+    std::vector<Match> matches;
     MockProducerAgent(long id) : Agent(id) {}
     Action policy(const Observation& obs) override {
         if(obs.time == tick(0)){
@@ -72,10 +73,14 @@ public:
         }
         return Action();
     }
+    void matchFound(const Match& match, tick now) override {
+        matches.push_back(match);
+    }
 };
 
 class MockConsumerAgent : public Agent {
 public:
+    std::vector<Match> matches;
     MockConsumerAgent(long id) : Agent(id) {}
     Action policy(const Observation& obs) override {
         if(obs.time == tick(0)){
@@ -90,6 +95,9 @@ public:
             return Action(o);
         }
         return Action();
+    }
+    void matchFound(const Match& match, tick now) override {
+        matches.push_back(match);
     }
 };
 
@@ -123,5 +131,108 @@ TEST_F(ABMTest, ProducerConsumerOneStep) {
     EXPECT_EQ(depth.bidBins[0].price, 100);
     EXPECT_EQ(depth.bidBins[0].totalQty, 2); // 2 remaining
 
+    EXPECT_TRUE(depth.askBins.empty());
+}
+
+TEST_F(ABMTest, MultipleStepsIncrementTickCounter) {
+    int numSteps = 10;
+    for(int i = 0; i < numSteps; ++i) {
+        abm.simStep();
+        // simStep increments tickCounter and calls observe() at the end
+        EXPECT_EQ(abm.getLatestObservation().time, tick(i + 1)); 
+    }
+}
+
+TEST_F(ABMTest, MatchRoutingToAgents) {
+    // 1 Producer, 1 Consumer
+    auto producer = std::make_unique<MockProducerAgent>(0);
+    auto consumer = std::make_unique<MockConsumerAgent>(0);
+
+    // Keep raw pointers to check state later
+    MockProducerAgent* pProducer = producer.get();
+    MockConsumerAgent* pConsumer = consumer.get();
+
+    abm.addAgent(std::move(producer));
+    abm.addAgent(std::move(consumer));
+
+    // Run one iteration of simStep()
+    abm.simStep();
+
+    // Verify matches
+    ASSERT_EQ(pProducer->matches.size(), 1);
+    ASSERT_EQ(pConsumer->matches.size(), 1);
+
+    Match prodMatch = pProducer->matches[0];
+    Match consMatch = pConsumer->matches[0];
+
+    // Check quantities
+    EXPECT_EQ(prodMatch.qty, 1);
+    EXPECT_EQ(consMatch.qty, 1);
+
+    // Check trader Ids identify who was who
+    EXPECT_EQ(prodMatch.seller.traderId, pProducer->traderId);
+    EXPECT_EQ(prodMatch.buyer.traderId, pConsumer->traderId);
+    
+    EXPECT_EQ(consMatch.seller.traderId, pProducer->traderId);
+    EXPECT_EQ(consMatch.buyer.traderId, pConsumer->traderId);
+}
+
+class CancelingAgent : public Agent {
+public:
+    long myOrderId = -1;
+    bool cancellationConfirmed = false;
+    long canceledOrderId = -1;
+
+    CancelingAgent(long id) : Agent(id) {}
+
+    Action policy(const Observation& obs) override {
+        if(obs.time == tick(0)){
+            Order o;
+            o.traderId = traderId;
+            o.ordId = traderId * 1000 + 1;
+            myOrderId = o.ordId;
+            o.side = Side::SELL;
+            o.qty = 1;
+            o.asset = "FOOD";
+            o.type = OrdType::LIMIT;
+            o.price = 100;
+            return Action(o); 
+        }
+        if(obs.time == tick(1)){
+             return Action(myOrderId);
+        }
+        return Action();
+    }
+
+    void orderCanceled(long orderId, tick now) override {
+        cancellationConfirmed = true;
+        canceledOrderId = orderId;
+    }
+};
+
+TEST_F(ABMTest, CancellationRouting) {
+    auto agent = std::make_unique<CancelingAgent>(0);
+    CancelingAgent* pAgent = agent.get();
+    abm.addAgent(std::move(agent));
+
+    // Tick 0 -> 1: Place Order
+    abm.simStep();
+
+    // Verify order is on the book
+    auto obs = abm.getLatestObservation();
+    Depth depth = obs.assetOrderDepths.at("FOOD");
+    ASSERT_EQ(depth.askBins.size(), 1);
+    EXPECT_EQ(depth.askBins[0].totalQty, 1);
+
+    // Tick 1 -> 2: Cancel Order
+    abm.simStep();
+
+    // Verify cancellation callback
+    EXPECT_TRUE(pAgent->cancellationConfirmed);
+    EXPECT_EQ(pAgent->canceledOrderId, pAgent->myOrderId);
+
+    // Verify order is gone from book
+    obs = abm.getLatestObservation();
+    depth = obs.assetOrderDepths.at("FOOD");
     EXPECT_TRUE(depth.askBins.empty());
 }

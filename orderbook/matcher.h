@@ -47,7 +47,7 @@ class Matcher{
 
         bool validateOrder(const Order& order);
 
-        bool shouldCleanCanceledOrder(long ordId);
+        bool isCanceled(long ordId);
 
         void pushBackLimitOrder(const Order& order);
 

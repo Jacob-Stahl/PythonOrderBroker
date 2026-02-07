@@ -18,7 +18,16 @@ const Spread Matcher::getSpread(){
 
     unsigned short bid;
     for (auto it = buyLimits.rbegin(); it != buyLimits.rend(); ++it){
-        if(!it->second.empty()){
+        bool levelHasActiveOrders = false;
+        
+        for (const auto& ord : it->second) {
+            if (!isCanceled(ord.ordId)) {
+                levelHasActiveOrders = true;
+                break;
+            }
+        }
+
+        if(levelHasActiveOrders){
             bid = it->first;
             bidsMissing = false;
             break;
@@ -27,7 +36,16 @@ const Spread Matcher::getSpread(){
 
     unsigned short ask;
     for (auto& [price, book] : sellLimits){
-        if(!book.empty()){
+        bool levelHasActiveOrders = false;
+        
+        for (const auto& ord : book) {
+            if (!isCanceled(ord.ordId)) {
+                levelHasActiveOrders = true;
+                break;
+            }
+        }
+
+        if(levelHasActiveOrders){
             ask = price;
             asksMissing = false;
             break;
@@ -48,6 +66,7 @@ const Depth Matcher::getDepth(){
         unsigned short price = it->first;
         unsigned int totalQtyAtPrice = 0;
         for (auto& o : it->second){
+            if (canceledOrderIds.find(o.ordId) != canceledOrderIds.end()) continue;
             totalQtyAtPrice += o.unfilled();
         }
         if(totalQtyAtPrice == 0) continue;
@@ -63,6 +82,7 @@ const Depth Matcher::getDepth(){
         if(bins >= maxBinsPerSide) break;
         unsigned int totalQtyAtPrice = 0;
         for (auto& o : book){
+            if (canceledOrderIds.find(o.ordId) != canceledOrderIds.end()) continue;
             totalQtyAtPrice += o.unfilled();
         }
         if(totalQtyAtPrice == 0) continue;
@@ -130,37 +150,42 @@ void Matcher::cancelOrder(long ordId){
     canceledOrderIds.insert(ordId);
 }
 
-bool Matcher::shouldCleanCanceledOrder(long ordId){
+bool Matcher::isCanceled(long ordId){
     if(canceledOrderIds.size() == 0){
         return false;
     }
 
-    if(canceledOrderIds.find(ordId) != canceledOrderIds.end()){
-        canceledOrderIds.erase(ordId);
-        return true;
+    if(canceledOrderIds.find(ordId) == canceledOrderIds.end()){
+        return false;
     }
 
-    return false;
+    return true;
 }
 
 void Matcher::dumpOrdersTo(std::vector<Order>& orders){
     
     // Add market and stop orders
     for(auto order : marketOrders){
-        orders.push_back(order);
+        if (!isCanceled(order.ordId)) {
+            orders.push_back(order);
+        }
     }
 
     // Add buy limits and stop limits
     for(auto& [price, book] : buyLimits){
         for(auto order : book){
-            orders.push_back(order);
+            if (!isCanceled(order.ordId)) {
+                orders.push_back(order);
+            }
         }
     }
 
     // Add sell limits and stop limits
     for(auto& [price, book] : sellLimits){
         for(auto order : book){
-            orders.push_back(order);
+            if (!isCanceled(order.ordId)) {
+                orders.push_back(order);
+            }
         }
     }
 }
@@ -265,7 +290,8 @@ void Matcher::matchOrders()
         ordIdx++;
 
         // Ignore canceled order, and mark for removal
-        if(shouldCleanCanceledOrder(order.ordId)){
+        if(isCanceled(order.ordId)){
+            canceledOrderIds.erase(order.ordId);
             marketOrdersToRemove.push_back(ordIdx);
             continue;
         }
@@ -396,8 +422,9 @@ bool Matcher::matchLimits(Order& marketOrd, const Spread& spread,
         ordIdx++;
 
         // Ignore canceled order, and mark for removal
-        if(shouldCleanCanceledOrder(limitOrder.ordId)){
+        if(isCanceled(limitOrder.ordId)){
             limitsToRemove.push_back(ordIdx);
+            canceledOrderIds.erase(limitOrder.ordId);
             continue;
         }
 
