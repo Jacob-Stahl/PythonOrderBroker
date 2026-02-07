@@ -90,3 +90,16 @@ void ABM::simStep(){
     routeMatches(notifier.matches);
     ++tickCounter;
 };
+
+void ABM::removeAgents(AgentSelector& agentSelector){
+    std::vector<bool> agentsToKeep{};
+    agentsToKeep.reserve(agents.size());
+
+    size_t keepIdx = 0;
+    for(auto& agent : agents){
+        agentsToKeep[keepIdx] = agentSelector.keepThis(agent);
+        ++keepIdx;
+    }
+
+    // TODO remove agents 
+}

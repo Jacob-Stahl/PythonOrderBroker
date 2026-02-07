@@ -5,6 +5,12 @@
 #include "matcher.h"
 #include "agent.h"
 
+
+class AgentSelector{
+    public:
+        virtual bool keepThis(const std::unique_ptr<Agent>& agent){return false; };
+};
+
 class ABM{
     std::vector<std::unique_ptr<Agent>> agents;
     tick tickCounter{0};
@@ -22,5 +28,6 @@ class ABM{
     public:
         ABM() = default;
         void simStep();
+        void removeAgents(AgentSelector& agentSelector);
 
 };

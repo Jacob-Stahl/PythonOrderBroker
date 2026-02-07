@@ -51,6 +51,10 @@ class Consumer : public Agent{
         virtual void matchFound(const Match& match, tick now){
             lastConsumed = now;
         }
+
+        virtual Action finalWill(const Observation& observation){
+            return Action(lastPlacedOrderId); // Cancel order before death
+        }
 };
 
 class Producer : public Agent{

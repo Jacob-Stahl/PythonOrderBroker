@@ -35,6 +35,11 @@ struct Action{
         cancelOrder = true;
         doomedOrderId = doomedOrderId_;
     }
+
+    Action(long doomedOrderId_){
+        cancelOrder = true;
+        doomedOrderId = doomedOrderId_;
+    }
 };
 
 class Agent{
@@ -47,6 +52,9 @@ class Agent{
         virtual void matchFound(const Match& match, tick now){};
         virtual void orderPlaced(long orderId, tick now){};
         virtual void orderCanceled(long orderId, tick now){};
+
+        /// @brief Final action before agent is removed from ABM
+        virtual Action lastWill(const Observation& observation){return Action();};
 };
 
 class Consumer : public Agent{
@@ -61,7 +69,8 @@ class Consumer : public Agent{
     public:
         Consumer(long traderId_, std::string asset_, 
             unsigned short maxPrice, tick appetiteCoef);
-        Action policy(const Observation& Observation) override;
+        Action policy(const Observation& observation) override;
+        Action lastWill(const Observation& observation) override;
 };
 
 class Producer : public Agent{
