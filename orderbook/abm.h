@@ -11,9 +11,11 @@ class AgentSelector{
         virtual bool keepThis(const std::unique_ptr<Agent>& agent){return true; };
 };
 
+/// @brief Agent Based Model. Framework for multi agent trading simulations.
 class ABM{
     std::vector<std::unique_ptr<Agent>> agents;
     tick tickCounter{0};
+    long nextTraderId = 1;
 
     /// @brief Asset - Matcher
     std::unordered_map<std::string, Matcher> orderMatchers;
@@ -29,6 +31,7 @@ class ABM{
     public:
         ABM() = default;
         void simStep();
+        long addAgent(std::unique_ptr<Agent> newAgent);
         void removeAgents(AgentSelector& agentSelector);
 
 };

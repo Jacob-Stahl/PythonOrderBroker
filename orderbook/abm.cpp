@@ -96,6 +96,12 @@ void ABM::simStep(){
     ++tickCounter;
 };
 
+long ABM::addAgent(std::unique_ptr<Agent> agent){
+    agent->traderId = ++nextTraderId;
+    agents.push_back(std::move(agent));
+    return nextTraderId;
+}
+
 void ABM::removeAgents(AgentSelector& agentSelector){
     std::vector<size_t> agentsToRemove{};
     size_t numAgents = agents.size();
