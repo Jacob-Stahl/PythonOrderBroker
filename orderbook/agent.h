@@ -62,7 +62,10 @@ class Consumer : public Agent{
 
     private:
         std::string asset;
-        long lastConsumed;
+        tick lastConsumed;
+        long lastPlacedOrderId;
+        unsigned short maxPrice;
+        tick ticksUntilHalfHunger;
 
         unsigned short newLimitPrice(tick now);
         unsigned short sigmoidHunger(tick timeSinceLastConsumption);
@@ -71,6 +74,8 @@ class Consumer : public Agent{
         Consumer(long traderId_, std::string asset_, 
             unsigned short maxPrice, tick appetiteCoef);
         Action policy(const Observation& observation) override;
+        void orderPlaced(long orderId, tick now) override;
+        void matchFound(const Match& match, tick now) override;
         Action lastWill(const Observation& observation) override;
 };
 
@@ -85,6 +90,6 @@ class Producer : public Agent{
         virtual Action policy(const Observation& observation);
 };
 
-long fast_sigmoid(long x) {
+inline long fast_sigmoid(long x) {
     return x / (1 + std::abs(x));
 };

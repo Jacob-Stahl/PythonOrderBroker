@@ -11,7 +11,7 @@ void ABM::observe(){
 
 void ABM::addMatcherIfNeeded(const std::string& asset){
     if(orderMatchers.find(asset) == orderMatchers.end()){
-        orderMatchers[asset] = Matcher(&notifier);
+        orderMatchers.emplace(asset, Matcher(&notifier));
     }
 };
 

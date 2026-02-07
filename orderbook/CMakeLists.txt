@@ -9,6 +9,8 @@ set(ORDERBOOK_SOURCES
 		order.cpp
 		matcher.cpp
 		notifier.cpp
+		abm.cpp
+		agent.cpp
 )
 
 add_library(orderbook STATIC ${ORDERBOOK_SOURCES})
