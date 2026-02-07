@@ -54,19 +54,6 @@ void ABM::routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
     matches.clear();
 };
 
-void ABM::simLoop(){
-    // Setup?
-
-    while(running){
-        simStep();
-        ++tickCounter;
-
-        // TODO: Record depths of each matcher?
-    }
-
-    // Tear down? Dump results?
-};
-
 void ABM::simStep(){
     // update latest observation
     observe();
@@ -102,4 +89,5 @@ void ABM::simStep(){
     };
 
     routeMatches(agents, notifier.matches);
+    ++tickCounter;
 };

@@ -8,7 +8,6 @@
 class ABM{
     std::vector<std::unique_ptr<Agent>> agents;
     tick tickCounter{0};
-    bool running = true;
 
     /// @brief Asset - Matcher
     std::unordered_map<std::string, Matcher> orderMatchers;
@@ -20,10 +19,9 @@ class ABM{
     void routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
         std::vector<Match>& matches);
     void observe();
-    void simStep();
-
+    
     public:
         ABM() = default;
-        void simLoop();
+        void simStep();
 
 };
