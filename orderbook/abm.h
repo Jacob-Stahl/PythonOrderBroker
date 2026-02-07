@@ -8,7 +8,7 @@
 
 class AgentSelector{
     public:
-        virtual bool keepThis(const std::unique_ptr<Agent>& agent){return false; };
+        virtual bool keepThis(const std::unique_ptr<Agent>& agent){return true; };
 };
 
 class ABM{
@@ -21,6 +21,7 @@ class ABM{
 
     Observation latestObservation;
 
+    void cancelOrderWithAllMatchers(long doomedOrderId);
     void addMatcherIfNeeded(const std::string& asset);
     void routeMatches(std::vector<Match>& matches);
     void observe();

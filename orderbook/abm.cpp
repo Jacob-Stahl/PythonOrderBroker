@@ -1,4 +1,5 @@
 #include "abm.h"
+#include "utils.h"
 
 void ABM::observe(){
     latestObservation.time = tickCounter;
@@ -53,6 +54,12 @@ void ABM::routeMatches(std::vector<Match>& matches){
     matches.clear();
 };
 
+void ABM::cancelOrderWithAllMatchers(long doomedOrderId){
+    for(auto& it : orderMatchers){
+        it.second.cancelOrder(doomedOrderId);
+    };
+}
+
 void ABM::simStep(){
     // update latest observation
     observe();
@@ -62,9 +69,7 @@ void ABM::simStep(){
         auto action = agent->policy(latestObservation);
         
         if(action.cancelOrder){
-            for(auto& it : orderMatchers){
-                it.second.cancelOrder(action.doomedOrderId);
-            };
+            cancelOrderWithAllMatchers(action.doomedOrderId);
             agent->orderCanceled(action.doomedOrderId, tickCounter);
         };
 
@@ -92,14 +97,25 @@ void ABM::simStep(){
 };
 
 void ABM::removeAgents(AgentSelector& agentSelector){
-    std::vector<bool> agentsToKeep{};
-    agentsToKeep.reserve(agents.size());
+    std::vector<size_t> agentsToRemove{};
+    size_t numAgents = agents.size();
+    agentsToRemove.reserve(numAgents);
 
-    size_t keepIdx = 0;
-    for(auto& agent : agents){
-        agentsToKeep[keepIdx] = agentSelector.keepThis(agent);
-        ++keepIdx;
+    for(size_t i = 0; i < numAgents; ++i){
+        auto& agent = agents[i];
+        if(!agentSelector.keepThis(agent)){
+
+            // Carry out final will
+            auto finalAction = agent->lastWill(latestObservation);
+            if(finalAction.cancelOrder){
+                cancelOrderWithAllMatchers(finalAction.doomedOrderId);
+            }
+            // TODO: Order placements after death not enforceable yet. fine for now
+
+            agentsToRemove.push_back(i);
+        }
     }
 
-    // TODO remove agents 
+    // Out to pasture
+    removeIdxs<std::unique_ptr<Agent>>(agents, agentsToRemove);
 }
