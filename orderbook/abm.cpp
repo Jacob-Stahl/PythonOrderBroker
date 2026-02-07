@@ -29,13 +29,29 @@ void ABM::routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
             [](const Match& a, const Match& b)
             {return a.buyer.traderId < b.buyer.traderId; });
 
-    // TODO:
     // Route matches to buyers
+    size_t agentIdx = 0;
+    for(auto& match : matches){
+        while(match.buyer.traderId != agents[agentIdx]->traderId){
+            ++agentIdx;
+        }
+        agents[agentIdx]->matchFound(match, tickCounter);
+    }
+
     // Sort by sellers.
+    std::sort(matches.begin(), matches.end(),
+        [](const Match& a, const Match& b)
+        {return a.seller.traderId < b.seller.traderId; });
+
     // Route matches to sellers
+    agentIdx = 0;
+    for(auto& match : matches){
+        while(match.seller.traderId != agents[agentIdx]->traderId){
+            ++agentIdx;
+        }
+        agents[agentIdx]->matchFound(match, tickCounter);
+    }
     
-    
-    // Empty matches.
     matches.clear();
 };
 
