@@ -16,10 +16,9 @@ class ABM{
     Observation latestObservation;
 
     void addMatcherIfNeeded(const std::string& asset);
-    void routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
-        std::vector<Match>& matches);
+    void routeMatches(std::vector<Match>& matches);
     void observe();
-    
+
     public:
         ABM() = default;
         void simStep();

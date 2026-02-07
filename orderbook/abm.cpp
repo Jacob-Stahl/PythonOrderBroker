@@ -14,8 +14,7 @@ void ABM::addMatcherIfNeeded(const std::string& asset){
     }
 };
 
-void ABM::routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
-        std::vector<Match>& matches){
+void ABM::routeMatches(std::vector<Match>& matches){
     
     // TODO: This sort should be moved so its not repeated constantly. But where?
     std::sort(agents.begin(), agents.end(), 
@@ -88,6 +87,6 @@ void ABM::simStep(){
         }
     };
 
-    routeMatches(agents, notifier.matches);
+    routeMatches(notifier.matches);
     ++tickCounter;
 };
