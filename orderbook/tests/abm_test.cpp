@@ -58,8 +58,9 @@ TEST_F(ABMTest, RemoveAgentsBasedOnId) {
 
 class MockProducerAgent : public Agent {
 public:
+    std::string asset;
     std::vector<Match> matches;
-    MockProducerAgent(long id) : Agent(id) {}
+    MockProducerAgent(long id, std::string asset_ = "FOOD") : Agent(id), asset(asset_) {}
     Action policy(const Observation& obs) override {
         if(obs.time == tick(0)){
             Order o;
@@ -67,7 +68,7 @@ public:
             o.ordId = traderId * 1000 + 1;
             o.side = Side::SELL;
             o.qty = 1;
-            o.asset = "FOOD";
+            o.asset = asset;
             o.type = OrdType::MARKET;
             return Action(o); 
         }
@@ -80,8 +81,9 @@ public:
 
 class MockConsumerAgent : public Agent {
 public:
+    std::string asset;
     std::vector<Match> matches;
-    MockConsumerAgent(long id) : Agent(id) {}
+    MockConsumerAgent(long id, std::string asset_ = "FOOD") : Agent(id), asset(asset_) {}
     Action policy(const Observation& obs) override {
         if(obs.time == tick(0)){
             Order o;
@@ -90,7 +92,7 @@ public:
             o.side = Side::BUY;
             o.qty = 1;
             o.price = 100;
-            o.asset = "FOOD";
+            o.asset = asset;
             o.type = OrdType::LIMIT;
             return Action(o);
         }
@@ -235,4 +237,47 @@ TEST_F(ABMTest, CancellationRouting) {
     obs = abm.getLatestObservation();
     depth = obs.assetOrderDepths.at("FOOD");
     EXPECT_TRUE(depth.askBins.empty());
+}
+
+TEST_F(ABMTest, MultipleAssetsNoCrossTalk) {
+    // Create 1 producer and 1 consumer for FOOD
+    auto foodProducer = std::make_unique<MockProducerAgent>(0, "FOOD");
+    auto foodConsumer = std::make_unique<MockConsumerAgent>(0, "FOOD");
+    MockProducerAgent* pFoodProd = foodProducer.get();
+    MockConsumerAgent* pFoodCons = foodConsumer.get();
+
+    // Create 1 producer and 1 consumer for WATER
+    auto waterProducer = std::make_unique<MockProducerAgent>(0, "WATER");
+    auto waterConsumer = std::make_unique<MockConsumerAgent>(0, "WATER");
+    MockProducerAgent* pWaterProd = waterProducer.get();
+    MockConsumerAgent* pWaterCons = waterConsumer.get();
+
+    abm.addAgent(std::move(foodProducer));
+    abm.addAgent(std::move(foodConsumer));
+    abm.addAgent(std::move(waterProducer));
+    abm.addAgent(std::move(waterConsumer));
+
+    abm.simStep();
+
+    // Verify matches for FOOD agents
+    ASSERT_EQ(pFoodProd->matches.size(), 1);
+    ASSERT_EQ(pFoodCons->matches.size(), 1);
+
+    // Verify matches for WATER agents
+    ASSERT_EQ(pWaterProd->matches.size(), 1);
+    ASSERT_EQ(pWaterCons->matches.size(), 1);
+
+    // Check assets in match details
+    EXPECT_EQ(pFoodProd->matches[0].buyer.asset, "FOOD");
+    EXPECT_EQ(pFoodProd->matches[0].seller.asset, "FOOD");
+    
+    EXPECT_EQ(pWaterProd->matches[0].buyer.asset, "WATER");
+    EXPECT_EQ(pWaterProd->matches[0].seller.asset, "WATER");
+
+    // Verify correct partners (no cross-talk)
+    EXPECT_EQ(pFoodProd->matches[0].buyer.traderId, pFoodCons->traderId);
+    EXPECT_EQ(pFoodCons->matches[0].seller.traderId, pFoodProd->traderId);
+
+    EXPECT_EQ(pWaterProd->matches[0].buyer.traderId, pWaterCons->traderId);
+    EXPECT_EQ(pWaterCons->matches[0].seller.traderId, pWaterProd->traderId);
 }
