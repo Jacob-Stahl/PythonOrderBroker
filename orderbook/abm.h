@@ -33,5 +33,7 @@ class ABM{
         void simStep();
         long addAgent(std::unique_ptr<Agent> newAgent);
         void removeAgents(AgentSelector& agentSelector);
+        
+        size_t getNumAgents() const { return agents.size(); }
 
 };

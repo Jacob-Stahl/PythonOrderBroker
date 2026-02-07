@@ -97,9 +97,10 @@ void ABM::simStep(){
 };
 
 long ABM::addAgent(std::unique_ptr<Agent> agent){
-    agent->traderId = ++nextTraderId;
+    long id = nextTraderId++;
+    agent->traderId = id;
     agents.push_back(std::move(agent));
-    return nextTraderId;
+    return id;
 }
 
 void ABM::removeAgents(AgentSelector& agentSelector){
