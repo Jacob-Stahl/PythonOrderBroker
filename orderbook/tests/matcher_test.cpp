@@ -389,3 +389,46 @@ TEST_F(MatcherTest, GetDepth_ReturnsCumulativeBins){
     EXPECT_EQ(120u, d.askBins[1].price);     // next price 120
     EXPECT_EQ(50u,  d.askBins[1].totalQty);  // cumulative at 120 = 20 + 30
 }
+
+TEST_F(MatcherTest, CanceledOrdersAreInvisibleInReflectedState){
+    // Place orders that define the BBO
+    auto buy = newOrder(BUY, LIMIT, 10, 100);
+    auto sell = newOrder(SELL, LIMIT, 10, 110);
+    matcher.addOrder(buy);
+    matcher.addOrder(sell);
+
+    // Verify initial state
+    auto spread = matcher.getSpread();
+    EXPECT_EQ(100, spread.highestBid);
+    EXPECT_EQ(110, spread.lowestAsk);
+    
+    auto depth = matcher.getDepth();
+    ASSERT_FALSE(depth.bidBins.empty());
+    ASSERT_FALSE(depth.askBins.empty());
+
+    // Cancel the buy order
+    matcher.cancelOrder(buy.ordId);
+
+    // Verify visibility without matching (lazy cleanup hasn't run yet)
+    
+    // Spread should now have missing bids (or next best bid, here empty)
+    spread = matcher.getSpread();
+    EXPECT_TRUE(spread.bidsMissing);
+    EXPECT_FALSE(spread.asksMissing);
+    EXPECT_EQ(110, spread.lowestAsk);
+
+    // Depth should be empty on the bid side
+    depth = matcher.getDepth();
+    EXPECT_TRUE(depth.bidBins.empty());
+    ASSERT_FALSE(depth.askBins.empty());
+    EXPECT_EQ(10, depth.askBins[0].totalQty);
+
+    // Cancel the sell order
+    matcher.cancelOrder(sell.ordId);
+
+    spread = matcher.getSpread();
+    EXPECT_TRUE(spread.asksMissing);
+
+    depth = matcher.getDepth();
+    EXPECT_TRUE(depth.askBins.empty());
+}
