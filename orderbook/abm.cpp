@@ -1,12 +1,11 @@
 #include "abm.h"
 
-const Observation ABM::observe(){
-    Observation o{};
-    o.time = tickCounter;
+void ABM::observe(){
+    latestObservation.time = tickCounter;
     for(auto& it : orderMatchers){
-        o.assetSpreads.at(it.first) = it.second.getSpread();
+        latestObservation.assetSpreads.at(it.first) = it.second.getSpread();
+        latestObservation.assetOrderDepths.at(it.first) = it.second.getDepth();
     };
-    return o;
 };
 
 void ABM::addMatcherIfNeeded(const std::string& asset){
@@ -24,7 +23,7 @@ void ABM::routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
         const std::unique_ptr<Agent>& b)
         {return a->traderId < b->traderId; });
 
-    // Sort by buyers first
+    // Sort by buyers.
     std::sort(matches.begin(), matches.end(),
             [](const Match& a, const Match& b)
             {return a.buyer.traderId < b.buyer.traderId; });
@@ -69,12 +68,12 @@ void ABM::simLoop(){
 };
 
 void ABM::simStep(){
-    // Get Observation
-    const Observation observation = observe();
+    // update latest observation
+    observe();
 
     // Execute actions for all agents
     for(auto& agent: agents){
-        auto action = agent->policy(observation);
+        auto action = agent->policy(latestObservation);
         
         if(action.cancelOrder){
             for(auto& it : orderMatchers){

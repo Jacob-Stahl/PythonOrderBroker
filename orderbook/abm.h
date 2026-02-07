@@ -14,10 +14,12 @@ class ABM{
     std::unordered_map<std::string, Matcher> orderMatchers;
     InMemoryNotifier notifier{};
 
+    Observation latestObservation;
+
     void addMatcherIfNeeded(const std::string& asset);
     void routeMatches(std::vector<std::unique_ptr<Agent>>& agents,
         std::vector<Match>& matches);
-    const Observation observe();
+    void observe();
     void simStep();
 
     public:

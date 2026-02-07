@@ -12,6 +12,7 @@ struct Observation{
 
     /// @brief asset - Spread
     std::unordered_map<std::string, Spread> assetSpreads;
+    std::unordered_map<std::string, Depth> assetOrderDepths;
 };
 
 struct Action{
