@@ -35,5 +35,6 @@ class ABM{
         void removeAgents(AgentSelector& agentSelector);
         
         size_t getNumAgents() const { return agents.size(); }
+        const Observation& getLatestObservation() {return latestObservation; };
 
 };

@@ -4,8 +4,8 @@
 void ABM::observe(){
     latestObservation.time = tickCounter;
     for(auto& it : orderMatchers){
-        latestObservation.assetSpreads.at(it.first) = it.second.getSpread();
-        latestObservation.assetOrderDepths.at(it.first) = it.second.getDepth();
+        latestObservation.assetSpreads[it.first] = it.second.getSpread();
+        latestObservation.assetOrderDepths[it.first] = it.second.getDepth();
     };
 };
 
@@ -94,6 +94,10 @@ void ABM::simStep(){
 
     routeMatches(notifier.matches);
     ++tickCounter;
+
+    // observe again to keep latestObservation up to date.
+    // TODO: fix this double work
+    observe();
 };
 
 long ABM::addAgent(std::unique_ptr<Agent> agent){
