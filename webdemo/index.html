@@ -42,12 +42,12 @@
                 const order = {
                     traderId: 101,
                     ordId: 500,
-                    side: Module.Side.BUY,
+                    side: Module.Side.BUY.value,
                     qty: 10,
                     price: 150,
                     stopPrice: 0,
                     asset: "AAPL",
-                    type: Module.OrdType.LIMIT
+                    type: Module.OrdType.LIMIT.value
                 };
 
                 log("\nCreated Test Order Object (JS):");
