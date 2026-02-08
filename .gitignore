@@ -209,11 +209,5 @@ __marimo__/
 
 *.DS_Store
 
-
-grafana_data/*
-mosquitto/*
-mosquitto_data/* 
-prometheus/*
-!prometheus/*prometheus.yml
 orderbook/main.dSYM/*
 orderbook/main
