@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EELib WASM Test</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        #log { background: #f0f0f0; padding: 1rem; border-radius: 4px; font-family: monospace; white-space: pre-wrap;}
+    </style>
+</head>
+<body>
+    <h1>EELib WASM Loader</h1>
+    <p>Status: <span id="status">Loading...</span></p>
+    
+    <h3>Console Output:</h3>
+    <div id="log"></div>
+
+    <script src="eelib.js"></script>
+    <script>
+        const logDiv = document.getElementById('log');
+        const statusSpan = document.getElementById('status');
+        
+        function log(msg) {
+            logDiv.textContent += msg + '\n';
+            console.log(msg);
+        }
+
+        createEelib().then(Module => {
+            statusSpan.textContent = 'Module Loaded!';
+            statusSpan.className = 'success';
+            
+            log("WASModule initialized.");
+
+            try {
+                // Test Enum Access
+                log("OrdType.LIMIT value: " + Module.OrdType.LIMIT.value);
+                
+                // Test Object Creation
+                const order = {
+                    traderId: 101,
+                    ordId: 500,
+                    side: Module.Side.BUY,
+                    qty: 10,
+                    price: 150,
+                    stopPrice: 0,
+                    asset: "AAPL",
+                    type: Module.OrdType.LIMIT
+                };
+
+                log("\nCreated Test Order Object (JS):");
+                log(JSON.stringify(order, null, 2));
+
+                // Verify the module can 'see' these types (this confirms bindings work)
+                log("\nTest complete.");
+            } catch (e) {
+                log("Error: " + e.message);
+                statusSpan.textContent = 'Error during test';
+                statusSpan.className = 'error';
+            }
+        }).catch(err => {
+            statusSpan.textContent = 'Failed to load module';
+            statusSpan.className = 'error';
+            log("Fatal Error: " + err);
+        });
+    </script>
+</body>
+</html>

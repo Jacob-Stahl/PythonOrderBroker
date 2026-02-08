@@ -211,3 +211,4 @@ __marimo__/
 
 eelib/main.dSYM/*
 eelib/main
+.vscode/c_cpp_properties.json
