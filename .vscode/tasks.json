@@ -2,10 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build orderbook tests",
+      "label": "Build eelib tests",
       "type": "shell",
       "command": "bash",
-      "args": ["-lc", "cd ${workspaceFolder}/orderbook && mkdir -p build && cd build && cmake .. && make"],
+      "args": ["-lc", "cd ${workspaceFolder}/eelib && mkdir -p build && cd build && cmake .. && make"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -16,15 +16,15 @@
       }
     },
     {
-      "label": "Run CTest (orderbook)",
+      "label": "Run CTest (eelib)",
       "type": "shell",
       "command": "bash",
-      "args": ["-lc", "cd ${workspaceFolder}/orderbook/build && ctest --output-on-failure"],
+      "args": ["-lc", "cd ${workspaceFolder}/eelib/build && ctest --output-on-failure"],
       "presentation": {
         "reveal": "always",
         "panel": "shared"
       },
-      "dependsOn": ["Build orderbook tests"]
+      "dependsOn": ["Build eelib tests"]
     }
   ]
 }

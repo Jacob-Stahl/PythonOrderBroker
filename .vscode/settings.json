@@ -1,6 +1,6 @@
 {
-  "testMate.cpp.test.executables": "orderbook/build/**/*test*",
-  "testMate.cpp.test.workingDirectory": "${workspaceFolder}/orderbook/build",
+  "testMate.cpp.test.executables": "eelib/build/**/*test*",
+  "testMate.cpp.test.workingDirectory": "${workspaceFolder}/eelib/build",
   "testMate.cpp.discovery.loadOnStartup": true,
   "testMate.cpp.discovery.strictPattern": false,
 
@@ -10,8 +10,8 @@
     "request": "launch",
     "program": "${execPath}",
     "args": ["--gtest_filter=${testFullName}"],
-    "cwd": "${workspaceFolder}/orderbook/build"
+    "cwd": "${workspaceFolder}/eelib/build"
   },
 
-  "cmake.sourceDirectory": "/Users/jacobstahl/Desktop/Code/PythonOrderBroker/orderbook"
+  "cmake.sourceDirectory": "/Users/jacobstahl/Desktop/Code/PythonOrderBroker/eelib"
 }

@@ -9,13 +9,7 @@
 void benchmarkMatcher();
 
 int main() {
-    // Simple C++ Orderbook application
-
     benchmarkMatcher();
-
-    // Some comment
-    std::cout << "Orderbook service is running..." << std::endl;
-    return 0;
 }
 
 

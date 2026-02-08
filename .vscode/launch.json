@@ -5,9 +5,9 @@
       "name": "LLDB: Debug single gtest",
       "type": "lldb-dap",
       "request": "launch",
-      "program": "${workspaceFolder}/orderbook/build/test_orderbook",
+      "program": "${workspaceFolder}/eelib/build/test_eelib",
       "args": ["--gtest_filter=${input:testFilter}"],
-      "cwd": "${workspaceFolder}/orderbook/build",
+      "cwd": "${workspaceFolder}/eelib/build",
       "stopOnEntry": false
     }
   ],

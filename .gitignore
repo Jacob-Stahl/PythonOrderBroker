@@ -209,5 +209,5 @@ __marimo__/
 
 *.DS_Store
 
-orderbook/main.dSYM/*
-orderbook/main
+eelib/main.dSYM/*
+eelib/main
