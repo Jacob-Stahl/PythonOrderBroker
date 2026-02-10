@@ -2,8 +2,14 @@
 #include "order.h"
 #include "matcher.h"
 #include "agent.h" 
+#include "abm.h"
 
 using namespace emscripten;
+
+// Helper to manage unique_ptr transfer from JS
+long abm_add_agent(ABM& abm, Agent* agent) {
+    return abm.addAgent(std::unique_ptr<Agent>(agent));
+}
 
 EMSCRIPTEN_BINDINGS(eelib_module) {
     enum_<OrdType>("OrdType")
@@ -41,12 +47,13 @@ EMSCRIPTEN_BINDINGS(eelib_module) {
         .field("price", &PriceBin::price)
         .field("totalQty", &PriceBin::totalQty);
 
+    // Register std::vector types used in Depth
+    register_vector<PriceBin>("VectorPriceBin");
+
     value_object<Depth>("Depth")
         .field("bidBins", &Depth::bidBins)
         .field("askBins", &Depth::askBins);
-        
-    // Register std::vector types used in Depth
-    register_vector<PriceBin>("VectorPriceBin");
+
 
     // Bindings for Observation and Action
     register_map<std::string, Spread>("MapStringSpread");
@@ -73,4 +80,11 @@ EMSCRIPTEN_BINDINGS(eelib_module) {
 
     class_<Consumer, base<Agent>>("Consumer")
         .constructor<long, std::string, unsigned short, tick>();
+
+    class_<ABM>("ABM")
+        .constructor<>()
+        .function("simStep", &ABM::simStep)
+        .function("addAgent", &abm_add_agent, allow_raw_pointers())
+        .function("getNumAgents", &ABM::getNumAgents)
+        .function("getLatestObservation", &ABM::getLatestObservation);
 }

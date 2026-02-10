@@ -35,30 +35,69 @@
             log("WASModule initialized.");
 
             try {
-                // Test Enum Access
-                log("OrdType.LIMIT value: " + Module.OrdType.LIMIT.value);
+                log("Running ABM Simulation...");
+
+                // Initialize ABM
+                const abm = new Module.ABM();
+                log("ABM initialized");
+
+                // Create Agents
+                // Producer: traderId=1, asset="AAPL", preferedPrice=100
+                const producer = new Module.Producer(1, "AAPL", 100);
                 
-                // Test Object Creation
-                const order = {
-                    traderId: 101,
-                    ordId: 500,
-                    side: Module.Side.BUY.value,
-                    qty: 10,
-                    price: 150,
-                    stopPrice: 0,
-                    asset: "AAPL",
-                    type: Module.OrdType.LIMIT.value
+                // Consumer: traderId=2, asset="AAPL", maxPrice=120, appetiteCoef=tick(10)
+                const appetite = new Module.tick(10);
+                const consumer = new Module.Consumer(2, "AAPL", 120, appetite);
+
+                // Add Agents to ABM
+                abm.addAgent(producer);
+                abm.addAgent(consumer);
+                log(`Agents added. Total agents: ${abm.getNumAgents()}`);
+
+                // Run Simulation Steps
+                log("Starting simulation loop...");
+                let step = 0;
+                const maxSteps = 15;
+
+                const runStep = () => {
+                    if (step >= maxSteps) {
+                        log("Simulation complete.");
+                        return;
+                    }
+                    
+                    abm.simStep();
+                    step++;
+                    
+                    const obs = abm.getLatestObservation();
+                    // obs.time is a tick object
+                    const time = obs.time.raw();
+                    
+                    // Check spreads for AAPL
+                    // observation.assetSpreads is a MapStringSpread
+                    let spreadInfo = "No Spread";
+                    if (obs.assetSpreads.has("AAPL")) {
+                        const spread = obs.assetSpreads.get("AAPL");
+                        spreadInfo = `Bid:${spread.highestBid} Ask:${spread.lowestAsk}`;
+                    }
+                    
+                    // Optionally check depth
+                    let depthInfo = "";
+                    if (obs.assetOrderDepths.has("AAPL")) {
+                         // Just presence check
+                    }
+
+                    log(`Step ${step} | Time: ${time} | AAPL: ${spreadInfo}`);
+                    
+                    setTimeout(runStep, 500);
                 };
 
-                log("\nCreated Test Order Object (JS):");
-                log(JSON.stringify(order, null, 2));
+                runStep();
 
-                // Verify the module can 'see' these types (this confirms bindings work)
-                log("\nTest complete.");
             } catch (e) {
                 log("Error: " + e.message);
                 statusSpan.textContent = 'Error during test';
                 statusSpan.className = 'error';
+                console.error(e);
             }
         }).catch(err => {
             statusSpan.textContent = 'Failed to load module';
