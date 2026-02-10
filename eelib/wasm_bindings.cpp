@@ -1,6 +1,7 @@
 #include <emscripten/bind.h>
 #include "order.h"
 #include "matcher.h"
+#include "agent.h" 
 
 using namespace emscripten;
 
@@ -14,6 +15,11 @@ EMSCRIPTEN_BINDINGS(eelib_module) {
     enum_<Side>("Side")
         .value("BUY", Side::BUY)
         .value("SELL", Side::SELL);
+
+    // Bind tick so we can pass it to Consumer
+    class_<tick>("tick")
+        .constructor<unsigned long>()
+        .function("raw", &tick::raw);
 
     value_object<Order>("Order")
         .field("traderId", &Order::traderId)
@@ -41,4 +47,30 @@ EMSCRIPTEN_BINDINGS(eelib_module) {
         
     // Register std::vector types used in Depth
     register_vector<PriceBin>("VectorPriceBin");
+
+    // Bindings for Observation and Action
+    register_map<std::string, Spread>("MapStringSpread");
+    register_map<std::string, Depth>("MapStringDepth");
+
+    value_object<Observation>("Observation")
+        .field("time", &Observation::time)
+        .field("assetSpreads", &Observation::assetSpreads)
+        .field("assetOrderDepths", &Observation::assetOrderDepths);
+
+    value_object<Action>("Action")
+        .field("placeOrder", &Action::placeOrder)
+        .field("order", &Action::order)
+        .field("cancelOrder", &Action::cancelOrder)
+        .field("doomedOrderId", &Action::doomedOrderId);
+
+
+    // Agents
+    class_<Agent>("Agent")
+        .property("traderId", &Agent::traderId);
+
+    class_<Producer, base<Agent>>("Producer")
+        .constructor<long, std::string, unsigned short>();
+
+    class_<Consumer, base<Agent>>("Consumer")
+        .constructor<long, std::string, unsigned short, tick>();
 }
