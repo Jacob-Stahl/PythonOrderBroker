@@ -281,3 +281,128 @@ TEST_F(ABMTest, MultipleAssetsNoCrossTalk) {
     EXPECT_EQ(pWaterProd->matches[0].buyer.traderId, pWaterCons->traderId);
     EXPECT_EQ(pWaterCons->matches[0].seller.traderId, pWaterProd->traderId);
 }
+
+class TickSpyAgent : public Agent {
+public:
+    tick lastOrderPlacedTick;
+    tick lastOrderCanceledTick;
+    tick lastMatchFoundTick;
+    bool orderPlacedCalled = false;
+    bool orderCanceledCalled = false;
+    bool matchFoundCalled = false;
+
+    Action nextAction;
+
+    TickSpyAgent(long id) : Agent(id) {}
+
+    Action policy(const Observation& obs) override {
+        return nextAction;
+    }
+
+    void orderPlaced(long orderId, tick now) override {
+        lastOrderPlacedTick = now;
+        orderPlacedCalled = true;
+    }
+
+    void orderCanceled(long orderId, tick now) override {
+        lastOrderCanceledTick = now;
+        orderCanceledCalled = true;
+    }
+
+    void matchFound(const Match& match, tick now) override {
+        lastMatchFoundTick = now;
+        matchFoundCalled = true;
+    }
+};
+
+TEST_F(ABMTest, AgentReceivesCorrectTickOnEvents) {
+    auto agentPtr = std::make_unique<TickSpyAgent>(0);
+    TickSpyAgent* agent = agentPtr.get();
+    abm.addAgent(std::move(agentPtr));
+
+    // Tick 0: Place Order
+    Order order("ASSET", BUY, LIMIT, 100, 1);
+    order.ordId = 123;
+    agent->nextAction = Action(order);
+    
+    abm.simStep(); // Tick becomes 1
+    
+    EXPECT_TRUE(agent->orderPlacedCalled);
+    EXPECT_EQ(agent->lastOrderPlacedTick.raw(), 0);
+
+    // Tick 1: Cancel Order
+    agent->nextAction = Action(order.ordId); // Cancel previous order
+    agent->orderPlacedCalled = false; // Reset flags
+    
+    abm.simStep(); // Tick becomes 2
+    
+    EXPECT_TRUE(agent->orderCanceledCalled);
+    EXPECT_EQ(agent->lastOrderCanceledTick.raw(), 1);
+
+    // Tick 2: Place Another Order
+    agent->orderPlacedCalled = false;
+    order.ordId = 124;
+    agent->nextAction = Action(order);
+
+    abm.simStep(); // Tick becomes 3
+
+    EXPECT_TRUE(agent->orderPlacedCalled);
+    EXPECT_EQ(agent->lastOrderPlacedTick.raw(), 2);
+}
+
+TEST_F(ABMTest, AgentReceivesCorrectTickOnMatch) {
+    // Producer/Consumer scenario to trigger a match
+    auto producerPtr = std::make_unique<TickSpyAgent>(0);
+    TickSpyAgent* producer = producerPtr.get();
+    
+    auto consumerPtr = std::make_unique<TickSpyAgent>(0);
+    TickSpyAgent* consumer = consumerPtr.get();
+
+    abm.addAgent(std::move(producerPtr));
+    abm.addAgent(std::move(consumerPtr));
+
+    // Tick 0: Producer places SELL
+    Order sellOrder("ASSET", SELL, LIMIT, 100, 1);
+    sellOrder.ordId = 1;
+    sellOrder.traderId = producer->traderId;
+    producer->nextAction = Action(sellOrder);
+    consumer->nextAction = Action(); // Do nothing
+    
+    abm.simStep(); // Tick 0 -> 1
+
+    EXPECT_TRUE(producer->orderPlacedCalled);
+    EXPECT_EQ(producer->lastOrderPlacedTick.raw(), 0);
+
+    // Tick 1: Consumer places BUY -> MATCH
+    producer->nextAction = Action();
+    
+    Order buyOrder("ASSET", BUY, MARKET, 0, 1);
+    buyOrder.ordId = 2;
+    buyOrder.traderId = consumer->traderId;
+    consumer->nextAction = Action(buyOrder);
+
+    abm.simStep(); // Tick 1 -> 2
+
+    // Producer receives match
+    EXPECT_TRUE(producer->matchFoundCalled);
+    EXPECT_EQ(producer->lastMatchFoundTick.raw(), 1);
+
+    // Consumer receives match
+    EXPECT_TRUE(consumer->matchFoundCalled);
+    EXPECT_EQ(consumer->lastMatchFoundTick.raw(), 1);
+    
+    // Check placed tick for consumer
+    EXPECT_TRUE(consumer->orderPlacedCalled);
+    EXPECT_EQ(consumer->lastOrderPlacedTick.raw(), 1);
+
+    // Tick 2: Step Forward, verify tick increments
+    producer->orderPlacedCalled = false;
+    sellOrder.ordId = 3;
+    producer->nextAction = Action(sellOrder);
+    consumer->nextAction = Action();
+
+    abm.simStep(); // Tick 2 -> 3
+
+    EXPECT_TRUE(producer->orderPlacedCalled);
+    EXPECT_EQ(producer->lastOrderPlacedTick.raw(), 2);
+}
