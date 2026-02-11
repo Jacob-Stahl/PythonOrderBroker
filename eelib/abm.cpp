@@ -79,6 +79,7 @@ void ABM::simStep(){
 
         if(action.placeOrder){
             Order order{action.order};
+            order.ordId = ++nextOrderId;
             addMatcherIfNeeded(order.asset);
 
             // TODO: delay matching until all orders are added?

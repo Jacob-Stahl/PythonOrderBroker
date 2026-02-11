@@ -16,6 +16,7 @@ class ABM{
     std::vector<std::unique_ptr<Agent>> agents;
     tick tickCounter{0};
     long nextTraderId = 1;
+    long nextOrderId = 1;
 
     /// @brief Asset - Matcher
     std::unordered_map<std::string, Matcher> orderMatchers;
