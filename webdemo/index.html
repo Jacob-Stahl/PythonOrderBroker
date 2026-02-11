@@ -41,20 +41,23 @@
                 const abm = new Module.ABM();
                 log("ABM initialized");
 
-                // Create Agents
+                // Create Single Producer
                 const producer = new Module.Producer(1, "FOOD", 100);
-                const appetite = new Module.tick(5);
-                const consumer = new Module.Consumer(10, "FOOD", 500, appetite);
-
-                // Add Agents to ABM
                 abm.addAgent(producer);
-                abm.addAgent(consumer);
+
+                // Create Consumers
+                const appetite = new Module.tick(5);
+                const numConsumers = 10;
+                for(let traderId = 10; traderId <(numConsumers + 10); traderId++){
+                    const consumer = new Module.Consumer(traderId, "FOOD", 500, appetite);
+                    abm.addAgent(consumer);
+                }
                 log(`Agents added. Total agents: ${abm.getNumAgents()}`);
 
                 // Run Simulation Steps
                 log("Starting simulation loop...");
                 let step = 0;
-                const maxSteps = 20;
+                const maxSteps = 200;
 
                 const runStep = () => {
                     if (step >= maxSteps) {
