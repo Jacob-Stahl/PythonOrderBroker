@@ -54,7 +54,6 @@ EMSCRIPTEN_BINDINGS(eelib_module) {
         .field("bidBins", &Depth::bidBins)
         .field("askBins", &Depth::askBins);
 
-
     // Bindings for Observation and Action
     register_map<std::string, Spread>("MapStringSpread");
     register_map<std::string, Depth>("MapStringDepth");

@@ -79,14 +79,15 @@
                     // Check spreads for AAPL
                     // observation.assetSpreads is a MapStringSpread
                     let spreadInfo = "No Spread";
-                    if (obs.assetSpreads.has("AAPL")) {
-                        const spread = obs.assetSpreads.get("AAPL");
+                    const spread = obs.assetSpreads.get("AAPL");
+                    if (spread) {
                         spreadInfo = `Bid:${spread.highestBid} Ask:${spread.lowestAsk}`;
                     }
                     
                     // Optionally check depth
                     let depthInfo = "";
-                    if (obs.assetOrderDepths.has("AAPL")) {
+                    const depth = obs.assetOrderDepths.get("AAPL");
+                    if (depth) {
                          // Just presence check
                     }
 
