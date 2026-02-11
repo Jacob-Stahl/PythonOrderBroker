@@ -4,15 +4,15 @@
 #include "match.h"
 #include <string>
 #include <functional>
-#include <unordered_map>
+#include <map>
 #include "tick.h"
 
 struct Observation{
     tick time;
 
     /// @brief asset - Spread
-    std::unordered_map<std::string, Spread> assetSpreads;
-    std::unordered_map<std::string, Depth> assetOrderDepths;
+    std::map<std::string, Spread> assetSpreads;
+    std::map<std::string, Depth> assetOrderDepths;
 };
 
 struct Action{
