@@ -31,10 +31,12 @@ void ABM::routeMatches(std::vector<Match>& matches){
     // Route matches to buyers
     size_t agentIdx = 0;
     for(auto& match : matches){
-        while(match.buyer.traderId != agents[agentIdx]->traderId){
+        while(agentIdx < agents.size() && agents[agentIdx]->traderId < match.buyer.traderId){
             ++agentIdx;
         }
-        agents[agentIdx]->matchFound(match, tickCounter);
+        if (agentIdx < agents.size() && agents[agentIdx]->traderId == match.buyer.traderId) {
+            agents[agentIdx]->matchFound(match, tickCounter);
+        }
     }
 
     // Sort by sellers.
@@ -45,10 +47,12 @@ void ABM::routeMatches(std::vector<Match>& matches){
     // Route matches to sellers
     agentIdx = 0;
     for(auto& match : matches){
-        while(match.seller.traderId != agents[agentIdx]->traderId){
+        while(agentIdx < agents.size() && agents[agentIdx]->traderId < match.seller.traderId){
             ++agentIdx;
         }
-        agents[agentIdx]->matchFound(match, tickCounter);
+        if (agentIdx < agents.size() && agents[agentIdx]->traderId == match.seller.traderId) {
+            agents[agentIdx]->matchFound(match, tickCounter);
+        }
     }
     
     matches.clear();
