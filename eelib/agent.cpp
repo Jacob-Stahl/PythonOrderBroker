@@ -30,7 +30,8 @@ Consumer::Consumer(long traderId_, std::string asset_, unsigned short maxPrice_,
     lastConsumed(tick(0)), 
     maxPrice(maxPrice_), 
     ticksUntilHalfHunger(appetiteCoef_),
-    asset(asset_)
+    asset(asset_),
+    lastPlacedOrderId(0)
 {}
 
 Action Consumer::policy(const Observation& observation){
@@ -42,8 +43,13 @@ Action Consumer::policy(const Observation& observation){
     auto price = newLimitPrice(observation.time);
 
     // qty always set to 1 to avoid partial fills
-    Order order(asset, BUY, LIMIT, price, 1);          
-    return Action{order, lastPlacedOrderId};
+    Order order(asset, BUY, LIMIT, price, 1);
+    
+    if (lastPlacedOrderId > 0) {
+        return Action{order, lastPlacedOrderId};
+    } else {
+        return Action{order};
+    }
 }
 
 void Consumer::orderPlaced(long orderId, tick now){
