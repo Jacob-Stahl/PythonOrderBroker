@@ -42,12 +42,9 @@
                 log("ABM initialized");
 
                 // Create Agents
-                // Producer: traderId=1, asset="AAPL", preferedPrice=100
-                const producer = new Module.Producer(1, "AAPL", 100);
-                
-                // Consumer: traderId=2, asset="AAPL", maxPrice=120, appetiteCoef=tick(10)
-                const appetite = new Module.tick(10);
-                const consumer = new Module.Consumer(2, "AAPL", 120, appetite);
+                const producer = new Module.Producer(1, "FOOD", 100);
+                const appetite = new Module.tick(5);
+                const consumer = new Module.Consumer(10, "FOOD", 500, appetite);
 
                 // Add Agents to ABM
                 abm.addAgent(producer);
@@ -57,7 +54,7 @@
                 // Run Simulation Steps
                 log("Starting simulation loop...");
                 let step = 0;
-                const maxSteps = 15;
+                const maxSteps = 20;
 
                 const runStep = () => {
                     if (step >= maxSteps) {
@@ -76,24 +73,24 @@
 
                     log(obs)
                     
-                    // Check spreads for AAPL
+                    // Check spreads for FOOD
                     // observation.assetSpreads is a MapStringSpread
                     let spreadInfo = "No Spread";
-                    const spread = obs.assetSpreads.get("AAPL");
+                    const spread = obs.assetSpreads.get("FOOD");
                     if (spread) {
                         spreadInfo = `Bid:${spread.highestBid} Ask:${spread.lowestAsk}`;
                     }
                     
                     // Optionally check depth
                     let depthInfo = "";
-                    const depth = obs.assetOrderDepths.get("AAPL");
+                    const depth = obs.assetOrderDepths.get("FOOD");
                     if (depth) {
                          // Just presence check
                     }
 
-                    log(`Step ${step} | Time: ${time} | AAPL: ${spreadInfo}`);
+                    log(`Step ${step} | Time: ${time} | FOOD: ${spreadInfo}`);
                     
-                    setTimeout(runStep, 500);
+                    setTimeout(runStep, 0);
                 };
 
                 runStep();
