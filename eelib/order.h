@@ -6,8 +6,8 @@ struct Spread{
     bool bidsMissing = true;
     bool asksMissing = true;
 
-    unsigned short highestBid;
-    unsigned short lowestAsk;
+    unsigned short highestBid = 0;
+    unsigned short lowestAsk = 0;
 };
 
 /// @brief Subset of the order types found here: https://www.onixs.biz/fix-dictionary/4.4/tagNum_40.html

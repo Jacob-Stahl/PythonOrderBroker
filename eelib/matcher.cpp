@@ -16,7 +16,7 @@ const Spread Matcher::getSpread(){
     bool bidsMissing = true;
     bool asksMissing = true;
 
-    unsigned short bid;
+    unsigned short bid = 0;
     for (auto it = buyLimits.rbegin(); it != buyLimits.rend(); ++it){
         bool levelHasActiveOrders = false;
         
@@ -34,7 +34,7 @@ const Spread Matcher::getSpread(){
         }
     }
 
-    unsigned short ask;
+    unsigned short ask = 0;
     for (auto& [price, book] : sellLimits){
         bool levelHasActiveOrders = false;
         

@@ -11,8 +11,8 @@
 #include <unordered_map>
 
 struct PriceBin{
-    unsigned short price;
-    unsigned int totalQty;
+    unsigned short price = 0;
+    unsigned int totalQty = 0;
 };
 
 struct Depth{
