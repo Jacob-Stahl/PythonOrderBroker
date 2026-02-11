@@ -61,8 +61,6 @@
                         log("Simulation complete.");
                         return;
                     }
-                    
-                    log(`Sim Step ${step}`);
 
                     abm.simStep();
                     step++;
@@ -71,8 +69,6 @@
                     // obs.time is a tick object
                     const time = obs.time.raw();
 
-                    log(obs)
-                    
                     // Check spreads for FOOD
                     // observation.assetSpreads is a MapStringSpread
                     let spreadInfo = "No Spread";
