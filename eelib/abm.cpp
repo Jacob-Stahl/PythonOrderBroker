@@ -84,11 +84,11 @@ void ABM::simStep(){
             // TODO: delay matching until all orders are added?
             orderMatchers.at(order.asset).addOrder(order);
             
-            if(notifier.placedOrders.back().ordId == order.ordId){
+            if(!notifier.placedOrders.empty() && notifier.placedOrders.back().ordId == order.ordId){
                 notifier.placedOrders.pop_back();
                 agent->orderPlaced(order.ordId, tickCounter);
             }
-            else // I'm trusting if an order is not placed, it MUST be in placementFailedOrders
+            else if(!notifier.placementFailedOrders.empty() && notifier.placementFailedOrders.back().ordId == order.ordId)
             {
                 notifier.placementFailedOrders.pop_back();
                 // TODO: notify placement failed?
