@@ -8,13 +8,16 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 2rem; }
         .success { color: green; font-weight: bold; }
         .error { color: red; font-weight: bold; }
-        #log { background: #f0f0f0; padding: 1rem; border-radius: 4px; font-family: monospace; white-space: pre-wrap;}
+        #log { background: #f0f0f0; padding: 1rem; border-radius: 4px; font-family: monospace; white-space: pre-wrap; height: 300px; overflow-y: scroll;}
+        canvas { border: 1px solid #ccc; margin-bottom: 1rem; background: #fff;}
     </style>
 </head>
 <body>
     <h1>EELib WASM Loader</h1>
     <p>Status: <span id="status">Loading...</span></p>
     
+    <canvas id="depthChart" width="800" height="400"></canvas>
+
     <h3>Console Output:</h3>
     <div id="log"></div>
 
@@ -22,10 +25,139 @@
     <script>
         const logDiv = document.getElementById('log');
         const statusSpan = document.getElementById('status');
+        const canvas = document.getElementById('depthChart');
+        const ctx = canvas.getContext('2d');
         
         function log(msg) {
-            logDiv.textContent += msg + '\n';
-            console.log(msg);
+            logDiv.textContent = msg + '\n' + logDiv.textContent;
+            // Limit log lines
+            if(logDiv.textContent.length > 5000) {
+                 logDiv.textContent = logDiv.textContent.substring(0, 5000) + "...";
+            }
+        }
+
+        function drawDepthChart(depth, assetName) {
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            // Extract data from C++ Vectors
+            const bids = [];
+            const asks = [];
+            
+            const bidVec = depth.bidBins;
+            for(let i=0; i<bidVec.size(); i++) {
+                const b = bidVec.get(i);
+                bids.push({price: b.price, qty: b.totalQty});
+            }
+            // Bids are Highest -> Lowest (Center -> Left)
+            
+            const askVec = depth.askBins;
+            for(let i=0; i<askVec.size(); i++) {
+                const a = askVec.get(i);
+                asks.push({price: a.price, qty: a.totalQty});
+            }
+            // Asks are Lowest -> Highest (Center -> Right)
+
+            if (bids.length === 0 && asks.length === 0) {
+                ctx.fillStyle = "#666";
+                ctx.textAlign = "center";
+                ctx.fillText("No Market Depth Data", width/2, height/2);
+                return;
+            }
+
+            // Calc Ranges
+            let minPrice = Infinity;
+            let maxPrice = -Infinity;
+            let maxQty = 0;
+
+            [...bids, ...asks].forEach(p => {
+                if (p.price < minPrice) minPrice = p.price;
+                if (p.price > maxPrice) maxPrice = p.price;
+                if (p.qty > maxQty) maxQty = p.qty;
+            });
+
+            // If empty range
+            if (minPrice === Infinity) { minPrice = 0; maxPrice = 500; }
+            if (maxPrice === minPrice) { minPrice -= 10; maxPrice += 10; }
+
+            const pricePadding = (maxPrice - minPrice) * 0.1 || 10;
+            minPrice = Math.max(0, minPrice - pricePadding);
+            maxPrice += pricePadding;
+            
+            const priceRange = maxPrice - minPrice;
+            const getX = (price) => ((price - minPrice) / priceRange) * width;
+            const getY = (qty) => height - ((qty / maxQty) * (height - 40)) - 20;
+
+            // Draw Bids (Green)
+            if (bids.length > 0) {
+                ctx.fillStyle = 'rgba(0, 200, 0, 0.2)';
+                ctx.strokeStyle = '#00aa00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                // Start from bottom at lowest price in visible range (or the first bid's price)
+                // Bids are High -> Low.
+                // We want to fill the area under the curve.
+                
+                // Start at the Highest Bid (first point) but at y=height (bottom)
+                // Wait, standard step chart for bids usually starts from left (lowest price) going up?
+                // The C++ API gives us cumulative. 
+                // Lowest Price Bid has max qty? 
+                // Usually cumulative depth:
+                // Asks: Price X has sum(qty for all asks <= X). (Increases with price)
+                // Bids: Price X has sum(qty for all bids >= X). (Increases with price decreasing)
+                // Let's verify what matcher.cpp does.
+                // Bids: iterate highest -> lowest. cumQty += qty.
+                // So Highest Bid has lowest cumulative Qty. Lowest Bid has highest cumulative Qty.
+                
+                // Plotting:
+                // Point 0: Highest Bid Price, Small Qty. (Mid-Right of Bid side)
+                // Point N: Lowest Bid Price, Large Qty. (Left of Bid side)
+                
+                ctx.moveTo(getX(bids[0].price), height); // Bottom at highest bid price
+                
+                for(let i=0; i<bids.length; i++) {
+                   ctx.lineTo(getX(bids[i].price), getY(bids[i].qty));
+                }
+                
+                ctx.lineTo(getX(bids[bids.length-1].price), height); // Bottom at lowest bid price
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // Draw Asks (Red)
+            if (asks.length > 0) {
+                ctx.fillStyle = 'rgba(200, 0, 0, 0.2)';
+                ctx.strokeStyle = '#aa0000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                // Asks: Lowest Price -> Highest.
+                // Lowest Ask has lowest cumQty. Highest Ask has highest cumQty.
+                
+                ctx.moveTo(getX(asks[0].price), height); // Bottom at lowest ask price
+                
+                for(let i=0; i<asks.length; i++) {
+                   ctx.lineTo(getX(asks[i].price), getY(asks[i].qty));
+                }
+                
+                ctx.lineTo(getX(asks[asks.length-1].price), height); // Bottom at highest ask
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // Labels
+            ctx.fillStyle = '#333';
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(minPrice.toFixed(0), 10, height - 5);
+            ctx.textAlign = 'right';
+            ctx.fillText(maxPrice.toFixed(0), width - 10, height - 5);
+            ctx.textAlign = 'center';
+            ctx.fillText(assetName, width/2, 20);
         }
 
         createEelib().then(Module => {
@@ -42,14 +174,14 @@
                 log("ABM initialized");
 
                 // Create Single Producer
-                const producer = new Module.Producer(1, "FOOD", 100);
+                const producer = new Module.Producer(1, "FOOD", 16);
                 abm.addAgent(producer);
 
                 // Create Consumers
                 const appetite = new Module.tick(5);
-                const numConsumers = 10;
+                const numConsumers =  25;
                 for(let traderId = 10; traderId <(numConsumers + 10); traderId++){
-                    const consumer = new Module.Consumer(traderId, "FOOD", 500, appetite);
+                    const consumer = new Module.Consumer(traderId, "FOOD", 32, appetite);
                     abm.addAgent(consumer);
                 }
                 log(`Agents added. Total agents: ${abm.getNumAgents()}`);
@@ -81,15 +213,14 @@
                     }
                     
                     // Optionally check depth
-                    let depthInfo = "";
                     const depth = obs.assetOrderDepths.get("FOOD");
                     if (depth) {
-                         // Just presence check
+                        drawDepthChart(depth, "FOOD");
                     }
 
                     log(`Step ${step} | Time: ${time} | FOOD: ${spreadInfo}`);
                     
-                    setTimeout(runStep, 0);
+                    setTimeout(runStep, 100);
                 };
 
                 runStep();
