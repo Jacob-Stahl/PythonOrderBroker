@@ -90,6 +90,6 @@ class Producer : public Agent{
         virtual Action policy(const Observation& observation);
 };
 
-inline long fast_sigmoid(long x) {
+inline double fast_sigmoid(double x) {
     return x / (1 + std::abs(x));
 };

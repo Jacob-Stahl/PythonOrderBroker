@@ -11,8 +11,8 @@ Action Agent::policy(const Observation& observation) {
 // Consumer Implementation
 
 unsigned short Consumer::sigmoidHunger(tick timeSinceLastConsumption){
-    long sig = fast_sigmoid(timeSinceLastConsumption.raw() / ticksUntilHalfHunger.raw()); 
-    return sig * maxPrice;
+    double sig = fast_sigmoid((double)timeSinceLastConsumption.raw() / (double)ticksUntilHalfHunger.raw()); 
+    return (unsigned short)(sig * maxPrice);
 };
 
 unsigned short Consumer::newLimitPrice(tick now){       
