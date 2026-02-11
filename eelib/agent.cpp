@@ -82,12 +82,12 @@ Action Producer::policy(const Observation& observation) {
         assetSpread = it->second;
     }
 
-    // Cease production if there are no bids
+    // Reduce production if bids are missing
     if(assetSpread.bidsMissing){
-        return Action();
+        if (qtyPerTick > 0)
+            --qtyPerTick;
     }
-
-    if(assetSpread.highestBid > preferedPrice){
+    else if(assetSpread.highestBid > preferedPrice){
         ++qtyPerTick;
     }
     else if(assetSpread.highestBid < preferedPrice){

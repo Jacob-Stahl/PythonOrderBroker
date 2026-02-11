@@ -8,16 +8,19 @@ protected:
     unsigned short preferredPrice = 100;
 };
 
-TEST_F(ProducerTest, DoesNothingWhenNoBids) {
+TEST_F(ProducerTest, DecreasesWhenNoBids) {
     Producer producer(producerId, asset, preferredPrice);
     Observation obs;
+    Spread spread;
+    spread.bidsMissing = true;
+    obs.assetSpreads[asset] = spread;
     obs.time = tick(10);
     
     // Empty observation (no spreads)
     Action act = producer.policy(obs);
     
-    EXPECT_FALSE(act.placeOrder);
-    EXPECT_FALSE(act.cancelOrder);
+    EXPECT_TRUE(act.placeOrder);
+    EXPECT_EQ(act.order.qty, 0);
 }
 
 TEST_F(ProducerTest, IncreasesQtyWhenBidHigh) {
