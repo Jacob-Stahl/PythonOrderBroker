@@ -65,12 +65,16 @@
                         return;
                     }
                     
+                    log(`Sim Step ${step}`);
+
                     abm.simStep();
                     step++;
                     
                     const obs = abm.getLatestObservation();
                     // obs.time is a tick object
                     const time = obs.time.raw();
+
+                    log(obs)
                     
                     // Check spreads for AAPL
                     // observation.assetSpreads is a MapStringSpread
