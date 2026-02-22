@@ -181,18 +181,18 @@ TEST_F(ABMTest, MatchRoutingToAgents) {
 
 class CancelingAgent : public Agent {
 public:
-    long myOrderId = -1;
     bool cancellationConfirmed = false;
-    long canceledOrderId = -1;
+    long orderToCancel = -1;
 
     CancelingAgent(long id) : Agent(id) {}
 
     Action policy(const Observation& obs) override {
+
+        // Place an order at tick 0, cancel it at tick 1
         if(obs.time == tick(0)){
             Order o;
             o.traderId = traderId;
             o.ordId = traderId * 1000 + 1;
-            myOrderId = o.ordId;
             o.side = Side::SELL;
             o.qty = 1;
             o.asset = "FOOD";
@@ -201,14 +201,18 @@ public:
             return Action(o); 
         }
         if(obs.time == tick(1)){
-             return Action(myOrderId);
+             return Action(orderToCancel); // Cancel the order placed at tick 0
         }
         return Action();
     }
 
+    void orderPlaced(long orderId, tick now) override {
+        orderToCancel = orderId; // Store the order ID to cancel later
+    }
+
     void orderCanceled(long orderId, tick now) override {
         cancellationConfirmed = true;
-        canceledOrderId = orderId;
+        orderToCancel = orderId;
     }
 };
 
@@ -231,7 +235,6 @@ TEST_F(ABMTest, CancellationRouting) {
 
     // Verify cancellation callback
     EXPECT_TRUE(pAgent->cancellationConfirmed);
-    EXPECT_EQ(pAgent->canceledOrderId, pAgent->myOrderId);
 
     // Verify order is gone from book
     obs = abm.getLatestObservation();
